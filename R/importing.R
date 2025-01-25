@@ -6,7 +6,6 @@ credit_risk <- read_csv("data/Credit risk.csv")
 market_risk <- read_csv("data/Market risk.csv")
 
 # Credit risk
-
 # Function to convert LEI codes to bank names
 convert_lei_to_bank_name <- function(df) {
   # Create a named vector of LEI codes and bank names
@@ -198,5 +197,4 @@ convert_lei_to_bank_name <- function(df) {
   return(df)
 }
 
-# Example usage:
-# my_dataframe <- convert_lei_to_bank_name(my_dataframe)
+credit_risk <- convert_lei_to_bank_name(credit_risk)
