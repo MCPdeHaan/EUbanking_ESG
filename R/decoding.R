@@ -74,3 +74,5 @@ credit_risk <- credit_risk %>%
   decode_column("Status", "data/Metadata.xlsx", "Status") %>%
   decode_column("Perf_Status", "data/Metadata.xlsx", "Perf_status") %>%
   decode_column("NACE_codes", "data/Metadata.xlsx", "NACE_codes")
+
+# LEI works, rest not
