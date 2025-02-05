@@ -1,4 +1,4 @@
-library(readr); library(readxl); library(dplyr)
+library(readr); library(readxl); library(dplyr); library(lubridate)
 
 sovereign_debt <- read_csv("data/Sovereign debt exposures.csv")
 other_templates <- read_csv("data/Other templates.csv")
@@ -18,7 +18,17 @@ credit_risk <- credit_risk %>%
   relocate(Bank_Name, .after = LEI_Code)
 
 credit_risk <- credit_risk %>%
-  mutate(
-    Year = year(Period),  # Extract year
-    Month = month(Period) # Extract month
-  )
+  mutate(Period = as.character(Period)) %>%
+  mutate(Period = case_when(
+    Period == "202309" ~ "2023-09-30",
+    Period == "202312" ~ "2023-12-31",
+    Period == "202403" ~ "2024-03-31",
+    Period == "202406" ~ "2024-06-30",
+    TRUE ~ Period
+  ))
+  
+# This deltetes all other banks, being 606922-598782 banks = 8140 banks
+remove_invalid_lei <- function(data) {
+  data %>% filter(LEI_Code != "XXXXXXXXXXXXXXXXXXXX")
+}
+credit_risk <- remove_invalid_lei(credit_risk)
