@@ -1,4 +1,5 @@
-library(readr); library(readxl); library(dplyr); library(lubridate); library(stringr)
+library(readr); library(readxl); library(dplyr); library(lubridate); 
+library(stringr); library(ggplot2)
 
 EU_trans_ex <- read_csv("data/Historical KM.csv")
 
@@ -35,8 +36,6 @@ EU_trans_ex_yearly %>%
   group_by(LEI_code, Name) %>%
   summarise(Total_Exposure = sum(Amount), .groups = "drop") %>%
   arrange(desc(Total_Exposure))
-
-library(ggplot2)
 
 # Example 1: Total risk exposure over time
 EU_trans_ex_yearly %>%
