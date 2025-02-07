@@ -26,9 +26,12 @@ credit_risk <- credit_risk %>%
     Period == "202406" ~ "2024-06-30",
     TRUE ~ Period
   ))
-  
-# This deltetes all other banks, being 606922-598782 banks = 8140 banks
+credit_risk$Period <- as.Date(credit_risk$Period, format = "%Y-%m-%d")
+
+# This deletes all other banks, being 606922-598782 banks = 8140 banks
 remove_invalid_lei <- function(data) {
   data %>% filter(LEI_Code != "XXXXXXXXXXXXXXXXXXXX")
 }
 credit_risk <- remove_invalid_lei(credit_risk)
+
+str(credit_risk)
