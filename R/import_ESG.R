@@ -66,9 +66,6 @@ ESG_tidy <- ESG_tidy %>%
   select(-Code, -`ICB Industry name`, -`GICS Sub-Industry Name`, 
          -`ICB Sector name`, -ISIN)
 
-
-
-
 glimpse(ESG)
 glimpse(ESG_tidy)
 colnames(ESG)
