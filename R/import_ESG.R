@@ -12,3 +12,16 @@ ESG[1, ] <- ESG[1, ] %>% mutate(across(everything(), ~ case_when(
   . == "FY2020" ~ "2020",
   TRUE ~ .
 )))
+
+write_csv(ESG, "data/ESG.csv")
+
+esg_long <- ESG %>%
+  pivot_longer(
+    cols = -c(Code, `Company Common Name`, `GICS Sub-Industry Name`, 
+              `ICB Sector name`, `Country of Headquarters`, ISIN, 
+              `Legal Entity ID (LEI)`),
+    names_to = c(".value", "Year"),
+    names_pattern = "([A-Za-z_]+)(\\d+)"
+  ) %>%
+  mutate(Year = as.numeric(Year))  # Convert the extracted year to numeric
+

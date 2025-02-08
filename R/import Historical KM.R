@@ -46,4 +46,5 @@ all.equal(sum(EU_trans_ex_yearly$Amount),
 EU_trans_ex_wide <- EU_trans_ex_wide %>%
   filter(LEI_code != "XXXXXXXXXXXXXXXXXXXX")
 
+write_csv(EU_trans_ex_wide, "data/EU_trans_ex_wide.csv")
 
