@@ -48,3 +48,5 @@ EU_trans_ex_wide <- EU_trans_ex_wide %>%
 
 write_csv(EU_trans_ex_wide, "data/EU_trans_ex_wide.csv")
 
+glimpse(EU_trans_ex_wide)
+colnames(EU_trans_ex_wide)

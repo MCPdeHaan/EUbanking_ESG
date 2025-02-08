@@ -61,6 +61,8 @@ ESG_tidy <- dat_long %>%
     values_fn = first  # take the first value in case of duplicates
   )
 
+ESG_tidy$year <- as.numeric(ESG_tidy$year)
+
 glimpse(ESG)
 glimpse(ESG_tidy)
 colnames(ESG)
