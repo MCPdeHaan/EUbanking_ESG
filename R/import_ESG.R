@@ -62,6 +62,12 @@ ESG_tidy <- dat_long %>%
   )
 
 ESG_tidy$year <- as.numeric(ESG_tidy$year)
+ESG_tidy <- ESG_tidy %>% 
+  select(-Code, -`ICB Industry name`, -`GICS Sub-Industry Name`, 
+         -`ICB Sector name`, -ISIN)
+
+
+
 
 glimpse(ESG)
 glimpse(ESG_tidy)
