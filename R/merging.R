@@ -27,6 +27,5 @@ dataset <- dataset %>%
   ) %>%
   relocate(year, .after = `Country of HQ`)  # Move year after Country of HQ
 
-# Check structure of mismatches if needed
 glimpse(country_mismatches)
 glimpse(name_mismatches)
