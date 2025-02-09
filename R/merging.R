@@ -1,37 +1,42 @@
+library(dplyr)
+
 dataset <- merge(
   ESG_tidy, 
   EU_trans_ex_wide, 
   by.x = c("Legal Entity ID (LEI)", "year"), 
   by.y = c("LEI_code", "Year"),
-  all = TRUE  # Use all=TRUE for a full (outer) join; use all.x=TRUE for a left join, etc.
+  all = TRUE  # Full outer join to keep all rows
 )
 
 dataset <- dataset %>%
   mutate(
-    # Clean company names for comparison
-    Name_clean             = tolower(trimws(Name)),
-    Company_Common_clean   = tolower(trimws(`Company Common Name`)),
-    # Clean country names for comparison
-    Country_clean          = tolower(trimws(Country)),
-    Headquarters_clean     = tolower(trimws(`Country of Headquarters`))
+    `Company Common Name` = coalesce(`Company Common Name`, Name),
+    `Country of Headquarters` = coalesce(`Country of Headquarters`, Country)
   )
 
+# Ireland; Republic of and Ireland are the same country
+unique(dataset$`Country of Headquarters`)
 
-# Create new columns with the desired logic
+# Solution for above problem
 dataset <- dataset %>%
-  mutate(
-    Company_Name = if_else(
-      Name_clean == Company_Common_clean,
-      Name,  # They match – use one of them
-      paste(Name, `Company Common Name`, sep = " / ")  # They differ – combine them
-    ),
-    Country_Name = if_else(
-      Country_clean == Headquarters_clean,
-      Country,  # They match
-      paste(Country, `Country of Headquarters`, sep = " / ")  # They differ
-    )
-  ) %>%
-  # Optionally, drop the intermediate clean columns
-  select(-Name_clean, -Company_Common_clean, -Country_clean, -Headquarters_clean)
+  mutate(`Country of Headquarters` = ifelse(`Country of Headquarters` 
+                                            == "Ireland; Republic of", "Ireland", 
+                                            `Country of Headquarters`))
 
-# Now merged_data has the new Company_Name and Country_Name columns
+
+dataset <- dataset %>%
+  select(-Country) %>%  # Remove the Country column
+  relocate(Name, .after = `Company Common Name`)  # Move Name after Company Common Name
+
+
+dataset <- dataset %>%
+  select(-Name) %>%  # Drop the Name column
+  rename(
+    LEI = `Legal Entity ID (LEI)`, 
+    Company = `Company Common Name`, 
+    `Country of HQ` = `Country of Headquarters`
+  ) %>%
+  relocate(year, .after = `Country of HQ`)  # Move year after Country of HQ
+
+glimpse(country_mismatches)
+glimpse(name_mismatches)
