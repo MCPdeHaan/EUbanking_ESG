@@ -66,13 +66,6 @@ ESG_tidy <- ESG_tidy %>%
   select(-Code, -`ICB Industry name`, -`GICS Sub-Industry Name`, 
          -`ICB Sector name`, -ISIN)
 
-ESG_tidy <- ESG_tidy %>%
-  rename(
-    Name = `Company Common Name`,
-    Country = `Country of Headquarters`,
-    LEI_code = `Legal Entity ID (LEI)`
-  )
-
 glimpse(ESG)
 glimpse(ESG_tidy)
 colnames(ESG)
