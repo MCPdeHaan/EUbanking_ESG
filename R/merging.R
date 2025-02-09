@@ -1,4 +1,4 @@
-library(dplyr)
+library(dplyr); library(openxlsx)
 
 # Merge datasets
 dataset <- merge(
@@ -29,3 +29,5 @@ dataset <- dataset %>%
 
 glimpse(country_mismatches)
 glimpse(name_mismatches)
+
+write.xlsx(dataset, "data/dataset.xlsx")
