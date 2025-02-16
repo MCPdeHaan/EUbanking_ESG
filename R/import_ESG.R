@@ -61,7 +61,10 @@ ESG_tidy <- dat_long %>%
 ESG_tidy <- ESG_tidy %>%
   mutate(
     `Legal Entity ID (LEI)` = trimws(`Legal Entity ID (LEI)`),
-    year = as.integer(year)
+    year = as.integer(year),
+    # Convert all numeric columns to numeric type, excluding identifier columns
+    across(c(-`Company Common Name`, -`Country of Headquarters`, -`Legal Entity ID (LEI)`, -year), 
+           ~as.numeric(.x))
   ) %>% 
   select(
     -`Code`, 
@@ -79,3 +82,5 @@ ESG_good <- ESG_tidy %>%
 
 glimpse(ESG_tidy)
 colnames(ESG_tidy)
+summary(ESG_tidy)
+summary(ESG_good)
