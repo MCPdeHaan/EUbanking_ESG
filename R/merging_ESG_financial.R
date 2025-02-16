@@ -1,7 +1,4 @@
-library(dplyr); library(openxlsx)
-
-
-
+library(tidyverse)
 
 # Merge datasets
 dataset <- full_join(ESG_tidy, EU_trans_ex_wide, 

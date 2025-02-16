@@ -1,7 +1,7 @@
-library(readr); library(tidyverse); library(tidyr)
+library(readr); library(tidyverse)
 
 # import dataset and replace any "NULL" strings with NA.
-ESG<- read_csv("data/ESG_Refinitiv_import.csv", show_col_types = FALSE) %>%
+ESG <- read_csv("data/ESG_Refinitiv_import.csv", show_col_types = FALSE) %>%
   mutate(across(everything(), ~ na_if(.x, "NULL"))) %>%
   { 
     # cleaning first row by removing the "FY" prefix.
@@ -48,19 +48,25 @@ ESG<- read_csv("data/ESG_Refinitiv_import.csv", show_col_types = FALSE) %>%
         values_fn = first  # In case of duplicate entries, take the first value.
       )
   } %>%
-  mutate(
-    `Legal Entity ID (LEI)` = trimws(`Legal Entity ID (LEI)`),
-    year = as.integer(year)
+  rename(
+    LEI_code = `Legal Entity ID (LEI)`,
+    Country = `Country of Headquarters`,
+    Name = `Company Common Name`,
+    Year = year
   ) %>%
-  # convert all non-identifier columns to numeric.
-  mutate(across(-c(`Company Common Name`, `Country of Headquarters`, `Legal Entity ID (LEI)`, year), as.numeric)) %>%
-  # remove columns that are not needed for further analysis
+  mutate(
+    LEI_code = trimws(LEI_code),
+    Year = as.integer(Year)
+  ) %>%
+  # Convert all non-identifier columns to numeric
+  mutate(across(-c(Name, Country, LEI_code, Year), as.numeric)) %>%
+  # Remove unnecessary columns
   select(-`Code`, -`ICB Industry name`, -`GICS Sub-Industry Name`, -`ICB Sector name`, -`ISIN`)
 
 # filter out rows where all non-identifier columns are NA.
 ESG_good <- ESG %>%
   filter(!if_all(
-    .cols = -c(`Company Common Name`, `Country of Headquarters`, `Legal Entity ID (LEI)`, year),
+    .cols = -c(Name, Country, LEI_code, Year),
     .fns = is.na
   ))
 
