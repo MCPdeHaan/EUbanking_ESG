@@ -1,53 +1,47 @@
-library(readr); library(readxl); library(dplyr); library(lubridate); 
-library(stringr); library(ggplot2); library(tidyverse)
+ library(tidyverse)
 
-EU_trans_ex <- read_csv("data/Historical KM.csv")
+financial <- read_csv("data/Historical KM.csv")
 
-EU_trans_ex <- EU_trans_ex %>% 
+financial <- financial %>% 
   mutate(Period = as.character(Period))
 
-EU_trans_ex_filtered <- EU_trans_ex %>%
+financial <- financial %>%
   filter(!str_starts(Period, "2019") & !str_starts(Period, "2024"))
 
-EU_trans_ex_yearly <- EU_trans_ex_filtered %>%
+financial_year <- financial %>%
   mutate(Year = str_sub(Period, 1, 4)) %>%  
   group_by(LEI_code, Name, NSA, Country, Year, Item, Label, Sheet) %>% 
   summarise(Amount = sum(Amount, na.rm = TRUE), .groups = "drop")
 
-EU_trans_ex_yearly <- EU_trans_ex_yearly %>%
+financial_year <- financial_year %>%
   mutate(Year = as.numeric(Year))
 
 # Aggregate to one row per bank-year-label
-EU_trans_ex_clean <- EU_trans_ex_yearly %>%
+financial_year <- financial_year %>%
   # Group by identifiers + Label 
   group_by(LEI_code, Name, NSA, Country, Year, Label) %>%
   summarise(Amount = sum(Amount, na.rm = TRUE), .groups = "drop")
 
-EU_trans_ex_clean %>%
+financial_year %>%
   count(LEI_code, Year, Label) %>%
   filter(n > 1)  # Should return 0 rows -> correct
 
 
-EU_trans_ex_wide <- EU_trans_ex_clean %>%
+financial_year <- financial_year %>%
   pivot_wider(
     names_from = Label,
     values_from = Amount,
     values_fill = list(Amount = 0)
   )
 
-# FALSE, so might be mistakes in pivot wider
-sum(EU_trans_ex_yearly$Amount) == sum(EU_trans_ex_wide %>% select(-c(LEI_code, Name, NSA, Country, Year)), na.rm = TRUE)
-
-# TRUE, so tolerance-based comparison yields no mismatches
-all.equal(sum(EU_trans_ex_yearly$Amount),
-          sum(EU_trans_ex_wide %>% select(-c(LEI_code, Name, NSA, Country, Year)), na.rm = TRUE))
-
 # Delete LEI_code with "XXXXXXXXXXXXXXXXXXXX"
-EU_trans_ex_wide <- EU_trans_ex_wide %>%
+financial_year <- financial_year %>%
   filter(LEI_code != "XXXXXXXXXXXXXXXXXXXX") %>% 
   select(-c(NSA))
 
-write_csv(EU_trans_ex_wide, "data/EU_trans_ex_wide.csv")
 
-glimpse(EU_trans_ex_wide)
-colnames(EU_trans_ex_wide)
+financial_year <- financial_year %>%
+  mutate(
+    LEI_code = trimws(LEI_code),
+    Year = as.integer(Year)
+  )
