@@ -24,3 +24,7 @@ financial_year <- read_csv("data/Historical KM.csv") %>%
   select(-NSA) %>%
   # Clean up LEI_code by trimming whitespace
   mutate(LEI_code = trimws(LEI_code))
+
+glimpse(financial_year)
+colnames(financial_year)
+summary(financial_year)
