@@ -25,3 +25,7 @@ data_full <- full_join(ESG, financial_year,
   rename(Name = Name_tmp, Country = Country_tmp) %>%
   # Reorder columns automatically
   select(LEI_code, Year, Name, Country, everything())
+
+
+library(janitor)
+data_analysis <- data_analysis %>% clean_names()
