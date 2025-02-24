@@ -1,4 +1,4 @@
-library(dplyr)
+library(dplyr); library(janitor)
 
 # 1. Merged dataset (inner join): only rows where both ESG and financial data exist
 data_analysis <- inner_join(ESG, financial_year, 
@@ -26,6 +26,6 @@ data_full <- full_join(ESG, financial_year,
   # Reorder columns automatically
   select(LEI_code, Year, Name, Country, everything())
 
-
-library(janitor)
+# unify names to prevent problems
 data_analysis <- data_analysis %>% clean_names()
+data_full <- data_full %>% clean_names()
