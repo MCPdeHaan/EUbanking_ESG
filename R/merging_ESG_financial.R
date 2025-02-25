@@ -60,7 +60,6 @@ data_full <- full_join(ESG, financial_year,
   select(LEI_code, Year, Name, Country, everything()) %>%
   clean_names()
 
-
 # Rename variables for cleaner code
 data_analysis <- data_analysis %>%
   rename(
@@ -70,3 +69,6 @@ data_analysis <- data_analysis %>%
     leverage_ratio = leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
     log_size = log_assets
   )
+
+# export data_analysis
+write_csv(data_analysis, "data/data_analysis.csv")

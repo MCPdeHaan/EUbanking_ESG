@@ -9,7 +9,7 @@ dataset_summary <- data_analysis %>%
     total_years = n_distinct(year),
     total_obs = n(),
     missing_esg = sum(is.na(esg_score)),
-    missing_cet1 = sum(is.na(common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition))
+    missing_cet1 = sum(is.na(cet1_ratio))
   )
 print("Dataset Summary:")
 print(dataset_summary)
@@ -43,32 +43,24 @@ summary_stats <- data_analysis %>%
   summarise(
     n = n(),
     # Capital ratios
-    cet1_ratio_mean = mean(common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
-                           na.rm = TRUE),
-    cet1_ratio_sd = sd(common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
-                       na.rm = TRUE),
-    tier1_ratio_mean = mean(tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
-                            na.rm = TRUE),
-    tier1_ratio_sd = sd(tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
-                        na.rm = TRUE),
-    total_capital_ratio_mean = mean(total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
-                                    na.rm = TRUE),
-    total_capital_ratio_sd = sd(total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
-                                na.rm = TRUE),
+    cet1_ratio_mean = mean(cet1_ratio, na.rm = TRUE),
+    cet1_ratio_sd = sd(cet1_ratio, na.rm = TRUE),
+    tier1_ratio_mean = mean(tier1_ratio, na.rm = TRUE),
+    tier1_ratio_sd = sd(tier1_ratio, na.rm = TRUE),
+    total_capital_ratio_mean = mean(total_capital_ratio, na.rm = TRUE),
+    total_capital_ratio_sd = sd(total_capital_ratio, na.rm = TRUE),
     
     # Leverage
-    leverage_ratio_mean = mean(leverage_ratio_using_a_transitional_definition_of_tier_1_capital, 
-                               na.rm = TRUE),
-    leverage_ratio_sd = sd(leverage_ratio_using_a_transitional_definition_of_tier_1_capital, 
-                           na.rm = TRUE),
+    leverage_ratio_mean = mean(leverage_ratio, na.rm = TRUE),
+    leverage_ratio_sd = sd(leverage_ratio, na.rm = TRUE),
     
     # Risk-weighted assets
     rwa_ratio_mean = mean(rwa_ratio, na.rm = TRUE),
     rwa_ratio_sd = sd(rwa_ratio, na.rm = TRUE),
     
     # Size
-    log_assets_mean = mean(log_assets, na.rm = TRUE),
-    log_assets_sd = sd(log_assets, na.rm = TRUE)
+    log_size_mean = mean(log_size, na.rm = TRUE),
+    log_size_sd = sd(log_size, na.rm = TRUE)
   )
 print("Summary Statistics by ESG Category:")
 print(summary_stats)
@@ -78,10 +70,9 @@ write.csv(summary_stats, "results/summary_stats_by_esg_category.csv", row.names 
 
 # 1. MAIN RELATIONSHIP: ESG Score vs CET1 Ratio
 p1 <- ggplot(data_analysis, 
-                      aes(x = esg_score, 
-                          y = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition)) +
+             aes(x = esg_score, y = cet1_ratio)) +
   # Size points by bank size to show additional dimension
-  geom_point(aes(size = log_assets, color = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition), 
+  geom_point(aes(size = log_size, color = cet1_ratio), 
              alpha = 0.7) +
   # Use a heatmap color scale for capital ratio
   scale_color_viridis_c(option = "plasma") +
@@ -89,10 +80,10 @@ p1 <- ggplot(data_analysis,
   geom_smooth(method = "lm", color = "black", linewidth = 1.2) +
   # Add correlation annotation
   annotate("text", x = max(data_analysis$esg_score, na.rm = TRUE) * 0.7, 
-           y = max(data_analysis$common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, na.rm = TRUE) * 0.95, 
+           y = max(data_analysis$cet1_ratio, na.rm = TRUE) * 0.95, 
            label = paste("Correlation:", 
                          round(cor(data_analysis$esg_score, 
-                                   data_analysis$common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
+                                   data_analysis$cet1_ratio, 
                                    use = "pairwise.complete.obs"), 2)),
            size = 4, fontface = "bold") +
   # Improved labels
@@ -113,8 +104,7 @@ ggsave("plots/esg_cet1_ratio.jpg", plot = p1, width = 10, height = 6, dpi = 300)
 # 2. ESG PILLARS vs CET1 RATIO
 # Environmental pillar
 p2 <- ggplot(data_analysis, 
-             aes(x = environmental_pillar_score, 
-                 y = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition)) +
+             aes(x = environmental_pillar_score, y = cet1_ratio)) +
   geom_point(alpha = 0.8, color = "#228B22", size = 2) +
   geom_smooth(method = "lm", color = "#006400", se = TRUE, linewidth = 1.5) +
   labs(title = "Environmental Score vs CET1 Ratio",
@@ -129,14 +119,13 @@ p2 <- ggplot(data_analysis,
 p2 <- p2 + annotate("text", x = max(data_analysis$environmental_pillar_score, na.rm = TRUE) * 0.9, 
                     y = 0.85, 
                     label = paste("r =", round(cor(data_analysis$environmental_pillar_score, 
-                                                   data_analysis$common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
+                                                   data_analysis$cet1_ratio, 
                                                    use = "pairwise.complete.obs"), 3)),
                     size = 3.5)
 
 # Social pillar
 p3 <- ggplot(data_analysis, 
-             aes(x = social_pillar_score, 
-                 y = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition)) +
+             aes(x = social_pillar_score, y = cet1_ratio)) +
   geom_point(alpha = 0.8, color = "#4682B4", size = 2) +
   geom_smooth(method = "lm", color = "#000080", se = TRUE, linewidth = 1.5) +
   labs(title = "Social Score vs CET1 Ratio",
@@ -151,14 +140,13 @@ p3 <- ggplot(data_analysis,
 p3 <- p3 + annotate("text", x = max(data_analysis$social_pillar_score, na.rm = TRUE) * 0.9, 
                     y = 0.85, 
                     label = paste("r =", round(cor(data_analysis$social_pillar_score, 
-                                                   data_analysis$common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
+                                                   data_analysis$cet1_ratio, 
                                                    use = "pairwise.complete.obs"), 3)),
                     size = 3.5)
 
 # Governance pillar
 p4 <- ggplot(data_analysis, 
-             aes(x = governance_pillar_score, 
-                 y = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition)) +
+             aes(x = governance_pillar_score, y = cet1_ratio)) +
   geom_point(alpha = 0.8, color = "#8A2BE2", size = 2) +
   geom_smooth(method = "lm", color = "#4B0082", se = TRUE, linewidth = 1.5) +
   labs(title = "Governance Score vs CET1 Ratio",
@@ -173,7 +161,7 @@ p4 <- ggplot(data_analysis,
 p4 <- p4 + annotate("text", x = max(data_analysis$governance_pillar_score, na.rm = TRUE) * 0.9, 
                     y = 0.85, 
                     label = paste("r =", round(cor(data_analysis$governance_pillar_score, 
-                                                   data_analysis$common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, 
+                                                   data_analysis$cet1_ratio, 
                                                    use = "pairwise.complete.obs"), 3)),
                     size = 3.5)
 
@@ -186,8 +174,7 @@ ggsave("plots/esg_pillars_cet1_improved.jpg", plot = p_combined, width = 15, hei
 
 # 3. CET1 RATIO BY ESG QUARTILE
 p5_improved <- ggplot(data_analysis, 
-                      aes(x = factor(esg_quartile), 
-                          y = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition)) +
+                      aes(x = factor(esg_quartile), y = cet1_ratio)) +
   geom_boxplot(aes(fill = factor(esg_quartile)), alpha = 0.8, outlier.shape = 1, outlier.size = 2) +
   # Add mean points with connecting line to highlight trend
   stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "black") +
@@ -214,19 +201,16 @@ ggsave("plots/cet1_by_esg_quartile_improved.jpg", plot = p5_improved, width = 8,
 # 4.1 Calculate correlations with shorter variable names for clarity
 esg_financial_cors_renamed <- data_analysis %>%
   select(esg_score, environmental_pillar_score, social_pillar_score, governance_pillar_score,
-         common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
+         cet1_ratio, tier1_ratio, total_capital_ratio, leverage_ratio,
          equity_to_assets, loan_to_assets, provisions_ratio) %>%
   rename("ESG Score" = esg_score,
          "Environmental" = environmental_pillar_score,
          "Social" = social_pillar_score,
          "Governance" = governance_pillar_score,
-         "CET1 Ratio" = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         "Tier 1 Ratio" = tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         "Total Capital" = total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         "Leverage Ratio" = leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
+         "CET1 Ratio" = cet1_ratio,
+         "Tier 1 Ratio" = tier1_ratio,
+         "Total Capital" = total_capital_ratio,
+         "Leverage Ratio" = leverage_ratio,
          "Equity/Assets" = equity_to_assets,
          "Loan/Assets" = loan_to_assets,
          "Provisions Ratio" = provisions_ratio) %>%
@@ -242,10 +226,7 @@ write.csv(esg_financial_cors_renamed, "results/esg_financial_cors_renamed.csv")
 # Original correlation matrix (for compatibility with existing code)
 esg_financial_cors <- data_analysis %>%
   select(esg_score, environmental_pillar_score, social_pillar_score, governance_pillar_score,
-         common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
+         cet1_ratio, tier1_ratio, total_capital_ratio, leverage_ratio,
          equity_to_assets, loan_to_assets, provisions_ratio) %>%
   cor(use = "pairwise.complete.obs")
 
@@ -318,16 +299,16 @@ highlight_cells(esg_financial_cors_renamed,
 dev.off()
 
 # 5. BANK SIZE vs ESG SCORE
-p7_improved <- ggplot(data_analysis, aes(x = log_assets, y = esg_score)) +
+p7_improved <- ggplot(data_analysis, aes(x = log_size, y = esg_score)) +
   # Add a subtle gradient color by bank size group
-  geom_point(aes(color = ifelse(log_assets > median(log_assets, na.rm = TRUE), "Large Banks", "Small Banks")), 
+  geom_point(aes(color = ifelse(log_size > median(log_size, na.rm = TRUE), "Large Banks", "Small Banks")), 
              alpha = 0.8, size = 2.5) +
   geom_smooth(method = "lm", color = "darkred", linewidth = 1.5, se = TRUE) +
   # Add correlation annotation
-  annotate("text", x = min(data_analysis$log_assets, na.rm = TRUE) + 1, 
+  annotate("text", x = min(data_analysis$log_size, na.rm = TRUE) + 1, 
            y = max(data_analysis$esg_score, na.rm = TRUE) - 5, 
            label = paste("Correlation:", 
-                         round(cor(data_analysis$log_assets, 
+                         round(cor(data_analysis$log_size, 
                                    data_analysis$esg_score, 
                                    use = "pairwise.complete.obs"), 2)),
            size = 4, fontface = "bold", hjust = 0) +
@@ -348,7 +329,7 @@ ggsave("plots/size_vs_esg_improved.jpg", plot = p7_improved, width = 10, height 
 # 7. ADDITIONAL EXPLORATORY ANALYSIS
 # 7.3 Provisions ratio vs ESG
 p10 <- ggplot(data_analysis, aes(x = esg_score, y = provisions_ratio)) +
-  geom_point(aes(color = log_assets), alpha = 0.7, size = 2.5) +
+  geom_point(aes(color = log_size), alpha = 0.7, size = 2.5) +
   geom_smooth(method = "lm", color = "darkred", se = TRUE) +
   scale_color_viridis_c(option = "plasma") +
   labs(title = "ESG Score vs Provisions Ratio",
@@ -364,8 +345,8 @@ p10 <- ggplot(data_analysis, aes(x = esg_score, y = provisions_ratio)) +
 ggsave("plots/esg_vs_provisions.jpg", plot = p10, width = 10, height = 6, dpi = 300)
 
 # 7.4 Leverage ratio vs ESG
-p11 <- ggplot(data_analysis, aes(x = esg_score, y = leverage_ratio_using_a_transitional_definition_of_tier_1_capital)) +
-  geom_point(aes(color = log_assets), alpha = 0.7, size = 2.5) +
+p11 <- ggplot(data_analysis, aes(x = esg_score, y = leverage_ratio)) +
+  geom_point(aes(color = log_size), alpha = 0.7, size = 2.5) +
   geom_smooth(method = "lm", color = "darkred", se = TRUE) +
   scale_color_viridis_c(option = "plasma") +
   labs(title = "ESG Score vs Leverage Ratio",
@@ -380,12 +361,10 @@ p11 <- ggplot(data_analysis, aes(x = esg_score, y = leverage_ratio_using_a_trans
 
 ggsave("plots/esg_vs_leverage.jpg", plot = p11, width = 10, height = 6, dpi = 300)
 
-
-
 # 8. ESG SCORE DISTRIBUTION
 p13 <- ggplot(data_analysis, aes(x = esg_score)) +
   geom_histogram(bins = 20, fill = "steelblue", color = "white", alpha = 0.8) +
-  geom_density(aes(y = ..count.. * 3), color = "darkred", linewidth = 1) +
+  geom_density(aes(y = after_stat(count) * 3), color = "darkred", linewidth = 1) +
   labs(title = "Distribution of ESG Scores",
        subtitle = "Histogram with density overlay",
        x = "ESG Score", 
@@ -398,12 +377,11 @@ ggsave("plots/esg_score_distribution.jpg", plot = p13, width = 10, height = 6, d
 
 # 9. EXAMINING RELATIONSHIP BETWEEN ESG AND CAPITAL BY BANK SIZE
 # Split banks into size quartiles
-data_analysis$size_quartile <- ntile(data_analysis$log_assets, 4)
+data_analysis$size_quartile <- ntile(data_analysis$log_size, 4)
 
 # Plot ESG vs CET1 by size quartile
 p14 <- ggplot(data_analysis, 
-              aes(x = esg_score, 
-                  y = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition)) +
+              aes(x = esg_score, y = cet1_ratio)) +
   geom_point(aes(color = factor(size_quartile)), alpha = 0.7) +
   geom_smooth(method = "lm", color = "black", se = FALSE) +
   geom_smooth(aes(color = factor(size_quartile)), method = "lm", se = FALSE, linetype = "dashed") +
@@ -425,11 +403,11 @@ ggsave("plots/esg_cet1_by_size.jpg", plot = p14, width = 10, height = 6, dpi = 3
 quartile_summary <- data_analysis %>%
   group_by(esg_quartile) %>%
   summarise(
-    CET1_Ratio = mean(common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition, na.rm = TRUE),
-    Leverage_Ratio = mean(leverage_ratio_using_a_transitional_definition_of_tier_1_capital, na.rm = TRUE),
+    CET1_Ratio = mean(cet1_ratio, na.rm = TRUE),
+    Leverage_Ratio = mean(leverage_ratio, na.rm = TRUE),
     Provisions_Ratio = mean(provisions_ratio, na.rm = TRUE) * 10, # Scale up for visibility
     Loan_to_Assets = mean(loan_to_assets, na.rm = TRUE),
-    Bank_Size = mean(log_assets, na.rm = TRUE) / 15 # Scale down for comparability
+    Bank_Size = mean(log_size, na.rm = TRUE) / 15 # Scale down for comparability
   )
 
 long_quartile_summary <- quartile_summary %>%
@@ -449,4 +427,3 @@ p16 <- ggplot(long_quartile_summary, aes(x = factor(esg_quartile), y = Value, gr
         plot.subtitle = element_text(size = 10, color = "darkgrey"))
 
 ggsave("plots/metrics_by_esg_quartile.jpg", plot = p16, width = 10, height = 6, dpi = 300)
-
