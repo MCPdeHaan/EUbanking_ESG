@@ -1,55 +1,61 @@
-library(dplyr); library(janitor)
+library(dplyr); library(janitor); library(tidyverse)
 
-# 1. Merged dataset (inner join): only rows where both ESG and financial data exist
+# merge only rows where both ESG and financial data exist
 data_analysis <- inner_join(ESG, financial_year, 
                             by = c("LEI_code", "Year"), 
                             suffix = c(".esg", ".fin")) %>%
+  # Handle duplicate name and country columns
   mutate(
-    Name_tmp    = if_else(is.na(`Name.esg`), `Name.fin`, `Name.esg`),
-    Country_tmp = if_else(is.na(`Country.esg`), `Country.fin`, `Country.esg`)
+    Name = coalesce(Name.esg, Name.fin),
+    Country = coalesce(Country.esg, Country.fin)
   ) %>%
-  select(-`Name.esg`, -`Name.fin`, -`Country.esg`, -`Country.fin`) %>%
-  rename(Name = Name_tmp, Country = Country_tmp) %>%
-  # Reorder columns automatically
-  select(LEI_code, Year, Name, Country, everything())
+  select(-Name.esg, -Name.fin, -Country.esg, -Country.fin) %>%
+  # Reorder columns for clarity
+  select(LEI_code, Year, Name, Country, everything()) %>%
+  # Clean column names for consistency
+  clean_names() %>%
+  # Add financial ratios and transformations
+  mutate(
+    # Financial ratios
+    equity_to_assets = total_equity / total_assets,
+    loan_to_assets = gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value / 
+      total_assets,
+    provisions_ratio = provisions / 
+      gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value,
+    liquidity_ratio = cash_cash_balances_at_central_banks_and_other_demand_deposits / total_assets,
+    
+    # Log transformations
+    log_assets = log(total_assets),
+    
+    # Risk measures
+    loan_quality = gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value / 
+      provisions,
+    rwa_ratio = total_risk_exposure_amount / total_assets,
+    
+    # ESG categorizations
+    esg_quartile = ntile(esg_score, 4),
+    env_quartile = ntile(environmental_pillar_score, 4),
+    soc_quartile = ntile(social_pillar_score, 4),
+    gov_quartile = ntile(governance_pillar_score, 4),
+    
+    # Convert year to factor for analysis
+    year_factor = as.factor(year),
+    
+    # Create ESG categories for descriptive analysis
+    esg_category = cut(esg_score, 
+                       breaks = c(0, 33, 66, 100),
+                       labels = c("Low", "Medium", "High"),
+                       include.lowest = TRUE)
+  )
 
-# 2. Merged dataset (full join): keeps all rows from either dataset
+# 2. Optional full join dataset 
 data_full <- full_join(ESG, financial_year, 
                        by = c("LEI_code", "Year"), 
                        suffix = c(".esg", ".fin")) %>%
   mutate(
-    Name_tmp    = if_else(is.na(`Name.esg`), `Name.fin`, `Name.esg`),
-    Country_tmp = if_else(is.na(`Country.esg`), `Country.fin`, `Country.esg`)
+    Name = coalesce(Name.esg, Name.fin),
+    Country = coalesce(Country.esg, Country.fin)
   ) %>%
-  select(-`Name.esg`, -`Name.fin`, -`Country.esg`, -`Country.fin`) %>%
-  rename(Name = Name_tmp, Country = Country_tmp) %>%
-  # Reorder columns automatically
-  select(LEI_code, Year, Name, Country, everything())
-
-# unify names to prevent problems
-data_analysis <- data_analysis %>% clean_names()
-data_full <- data_full %>% clean_names()
-
-# Compute summary statistics and bank distribution (needed later for sensitivity analysis)
-summary_inner <- data_analysis %>%
-  summarise(
-    total_banks = n_distinct(lei_code),
-    total_years = n_distinct(year),
-    total_obs   = n()
-  )
-print(summary_inner)
-
-year_distribution <- data_analysis %>%
-  group_by(year) %>%
-  summarise(
-    n_obs   = n(),
-    n_banks = n_distinct(lei_code)
-  ) %>%
-  arrange(year)
-print(year_distribution)
-
-bank_distribution <- data_analysis %>%
-  group_by(name) %>%
-  summarise(n_years = n_distinct(year)) %>%
-  arrange(desc(n_years))
-print(bank_distribution)
+  select(-Name.esg, -Name.fin, -Country.esg, -Country.fin) %>%
+  select(LEI_code, Year, Name, Country, everything()) %>%
+  clean_names()
