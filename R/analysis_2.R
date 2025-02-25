@@ -93,8 +93,6 @@ significant_results <- component_results[component_results$p_value < 0.05, ]
 print(head(component_results, 20))
 write.csv(component_results, "esg_component_financial_metric_results.csv", row.names = FALSE)
 
-
-
 # Visualize top significant relationships
 top_results <- head(component_results, 10)
 top_results$significance <- ifelse(top_results$p_value < 0.01, "p < 0.01", 
@@ -568,6 +566,31 @@ ggplot(significant_pca, aes(x = reorder(paste(factor_name, financial_metric, sep
 # IX. Predicted Effect of ESG Score and Visualization
 # ------------------------------
 # Create a prediction grid over the range of ESG scores in the complete sample
+
+
+# 8. Sensitivity Analysis: Complete Data Sample
+# Identify banks with complete data (e.g., data available in all 4 years)
+complete_banks <- bank_distribution %>% filter(n_years == 4) %>% pull(name)
+data_complete <- data_analysis %>% filter(name %in% complete_banks)
+panel_data_complete <- pdata.frame(data_complete, index = c("lei_code", "year"))
+
+# Fixed Effects Model on Complete Banks
+model_fe_complete <- plm(
+  common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition ~ 
+    esg_score + log_assets + loan_quality + liquidity_ratio,
+  data = panel_data_complete, model = "within", effect = "twoways"
+)
+fe_complete_robust_se <- vcovHC(model_fe_complete, method = "arellano", cluster = "group")
+fe_complete_results <- coeftest(model_fe_complete, fe_complete_robust_se)
+print("Fixed Effects Model on Complete Banks with Robust SEs:")
+print(fe_complete_results)
+
+# Driscoll-Kraay Robust SEs for the complete-sample FE model
+dk_robust_se <- vcovSCC(model_fe_complete, type = "HC0", maxlag = 2)
+dk_results <- coeftest(model_fe_complete, dk_robust_se)
+print("Fixed Effects Model on Complete Banks with Driscoll-Kraay Robust SEs:")
+print(dk_results)
+
 esg_seq <- seq(min(panel_data_complete$esg_score, na.rm = TRUE),
                max(panel_data_complete$esg_score, na.rm = TRUE), length.out = 100)
 
