@@ -200,9 +200,10 @@ test_lagged_effects <- function(panel_data) {
     lag_results[[paste(metric, "overall")]] <- model_overall
     lag_results[[paste(metric, "pillars")]] <- model_pillars
     
-    # Add to summary dataframe
-    for (i in 1:length(robust_results_overall)) {
-      if (rownames(robust_results_overall)[i] == "lag1_esg_score") {
+    # Add to summary dataframe - FIXED SECTION
+    overall_rows <- rownames(robust_results_overall)
+    for (i in 1:nrow(robust_results_overall)) {
+      if (!is.na(overall_rows[i]) && overall_rows[i] == "lag1_esg_score") {
         lag_summary <- rbind(lag_summary, data.frame(
           financial_metric = metric,
           model_type = "overall",
@@ -215,12 +216,13 @@ test_lagged_effects <- function(panel_data) {
       }
     }
     
-    for (i in 1:length(robust_results_pillars)) {
-      if (rownames(robust_results_pillars)[i] %in% c("lag1_env_score", "lag1_soc_score", "lag1_gov_score")) {
+    pillar_rows <- rownames(robust_results_pillars)
+    for (i in 1:nrow(robust_results_pillars)) {
+      if (!is.na(pillar_rows[i]) && pillar_rows[i] %in% c("lag1_env_score", "lag1_soc_score", "lag1_gov_score")) {
         lag_summary <- rbind(lag_summary, data.frame(
           financial_metric = metric,
           model_type = "pillars",
-          variable = rownames(robust_results_pillars)[i],
+          variable = pillar_rows[i],
           coefficient = robust_results_pillars[i, "Estimate"],
           std_error = robust_results_pillars[i, "Std. Error"],
           t_value = robust_results_pillars[i, "t value"],
