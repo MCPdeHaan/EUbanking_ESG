@@ -4,23 +4,6 @@ library(psych); library(ggplot2); library(corrplot)
 # Convert data_analysis to a panel data frame
 panel_data <- pdata.frame(data_analysis, index = c("lei_code", "year"))
 
-# Correlation analysis 
-corr_vars <- data_analysis %>%
-  select(esg_score, environmental_pillar_score, social_pillar_score, governance_pillar_score,
-         common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-         leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
-         equity_to_assets, loan_to_assets, provisions_ratio)
-
-correlation_matrix <- cor(corr_vars, use = "pairwise.complete.obs")
-
-# Visualize the correlation matrix
-png("correlation_plot.png", width = 12, height = 10, units = "in", res = 300)
-corrplot(correlation_matrix, method = "color", type = "upper", order = "hclust", 
-         tl.col = "black", tl.srt = 45, tl.cex = 0.7,
-         title = "Correlation between ESG Scores and Financial Metrics")
-dev.off()
 
 # Testing Individual ESG Components
 test_individual_components <- function(panel_data) {
@@ -378,6 +361,7 @@ test_nonlinear_relationships <- function(panel_data) {
 }
 
 nonlinear_results <- test_nonlinear_relationships(panel_data)
+nonlinear_results
 
 # Find cases with significant non-linearity
 significant_nonlinear <- nonlinear_results$summary[nonlinear_results$summary$squared_term_p < 0.1, ]
