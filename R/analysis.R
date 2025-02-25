@@ -1,15 +1,6 @@
-
-library(tidyverse)
-library(plm)
-library(lmtest)
-library(sandwich)
-library(car)
-library(quantreg)
-library(ggplot2)
-library(corrplot)
-library(stargazer)
-library(psych)
-library(gridExtra)
+library(tidyverse); library(plm); library(lmtest); library(sandwich)
+library(car); library(quantreg); library(ggplot2); library(corrplot)
+library(stargazer); library(psych); library(gridExtra)
 
 # Create panel data object
 panel_data <- pdata.frame(data_analysis, index = c("lei_code", "year"))
