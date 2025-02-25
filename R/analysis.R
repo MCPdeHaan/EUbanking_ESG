@@ -3,32 +3,7 @@ library(ggplot2)
 
 panel_data <- pdata.frame(data_analysis, index = c("lei_code", "year"))
 
-# Compute summary statistics and bank distribution (needed later for sensitivity analysis)
-summary_inner <- data_analysis %>%
-  summarise(
-    total_banks = n_distinct(lei_code),
-    total_years = n_distinct(year),
-    total_obs   = n()
-  )
-print(summary_inner)
-
-year_distribution <- data_analysis %>%
-  group_by(year) %>%
-  summarise(
-    n_obs   = n(),
-    n_banks = n_distinct(lei_code)
-  ) %>%
-  arrange(year)
-print(year_distribution)
-
-bank_distribution <- data_analysis %>%
-  group_by(name) %>%
-  summarise(n_years = n_distinct(year)) %>%
-  arrange(desc(n_years))
-print(bank_distribution)
-
-
-# 2. Test Individual ESG Components
+# Test individual components of ESG scores
 test_individual_components <- function(panel_data) {
   esg_components <- c(
     "esg_score", "environmental_pillar_score", "social_pillar_score", "governance_pillar_score",
