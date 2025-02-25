@@ -29,3 +29,27 @@ data_full <- full_join(ESG, financial_year,
 # unify names to prevent problems
 data_analysis <- data_analysis %>% clean_names()
 data_full <- data_full %>% clean_names()
+
+# Compute summary statistics and bank distribution (needed later for sensitivity analysis)
+summary_inner <- data_analysis %>%
+  summarise(
+    total_banks = n_distinct(lei_code),
+    total_years = n_distinct(year),
+    total_obs   = n()
+  )
+print(summary_inner)
+
+year_distribution <- data_analysis %>%
+  group_by(year) %>%
+  summarise(
+    n_obs   = n(),
+    n_banks = n_distinct(lei_code)
+  ) %>%
+  arrange(year)
+print(year_distribution)
+
+bank_distribution <- data_analysis %>%
+  group_by(name) %>%
+  summarise(n_years = n_distinct(year)) %>%
+  arrange(desc(n_years))
+print(bank_distribution)
