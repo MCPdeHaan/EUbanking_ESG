@@ -59,3 +59,14 @@ data_full <- full_join(ESG, financial_year,
   select(-Name.esg, -Name.fin, -Country.esg, -Country.fin) %>%
   select(LEI_code, Year, Name, Country, everything()) %>%
   clean_names()
+
+
+# Rename variables for cleaner code
+data_analysis <- data_analysis %>%
+  rename(
+    cet1_ratio = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
+    tier1_ratio = tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
+    total_capital_ratio = total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
+    leverage_ratio = leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
+    log_size = log_assets
+  )
