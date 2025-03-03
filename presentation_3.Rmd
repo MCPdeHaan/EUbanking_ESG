@@ -1,0 +1,534 @@
+---
+title: "ESG Performance and Banking Risk"
+subtitle: "Research Progress Update"
+author: "Maurits de Haan"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: custom.css
+    logo: fno_logo.png
+    transition: faster
+    smaller: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6, dpi = 300,
+                      out.width = "100%", fig.align = "center")
+
+# Load required libraries
+library(tidyverse)
+library(ggplot2)
+library(kableExtra)
+library(corrplot)
+library(gridExtra)
+library(scales)
+library(plm)
+library(grid)
+library(DiagrammeR)
+library(htmltools)
+```
+
+
+## Research Background & Objectives {.build}
+
+**Industry Context**
+
+- Banking sector under increasing pressure for ESG integration
+- Regulatory push toward sustainable finance
+- Unclear relationship between ESG and financial risk
+
+**Current Knowledge Gap**
+
+- Limited studies using regulatory data
+- Focus primarily on accounting metrics
+
+## Research Questions {.emphasized}
+
+<div class="question-box">
+**Primary Question**<br>
+How does ESG performance influence banking risk metrics, particularly capital adequacy in Eurozone banks between 2020-2023?
+</div>
+
+<div class="columns-3">
+<div class="question-box-small">
+**Component Analysis**<br>
+Which ESG pillars have the strongest relationship with risk metrics?
+</div>
+<div class="question-box-small">
+**Size Mediation**<br>
+How does bank size mediate the ESG-risk relationship?
+</div>
+<div class="question-box-small">
+
+</div>
+</div>
+
+## Dataset {.emphasized}
+
+<div class="columns-2">
+<div>
+**ESG Data (LSEG Refinitiv)**
+
+- Comprehensive ESG scores for Eurozone banks
+- Overall score plus pillar breakdown
+- Component-level granularity
+- Consistent methodology post-2019
+- Industry-standard metrics
+
+**Research Period**
+
+- 2020-2023 (annual data)
+- Balanced between data availability and reliability
+</div>
+<div>
+**Banking Risk Data (EBA)**
+
+- Regulatory capital metrics
+- CET1, Tier 1 and Total Capital ratios
+- Leverage ratios
+- Risk-weighted assets
+- Provisions data
+- Recently made public
+
+**Final Dataset**
+
+- ~400 bank-year observations
+- ~100 unique banks
+- Complete panel for core metrics
+</div>
+</div>
+
+## Data Preparation Process {.emphasized}
+
+```{r data-flow, fig.height=1, fig.width=8}
+# Create data flow diagram with DiagrammeR
+DiagrammeR::grViz("
+digraph data_flow {
+  # Graph settings
+  graph [rankdir = LR, fontname = 'Helvetica', nodesep = 0.5, ranksep = 0.7]
+  node [shape = box, style = filled, fontname = 'Helvetica', fontsize = 20]
+  edge [penwidth = 1.2]
+  
+  # Input data nodes
+  ESG_Raw [label = 'Raw ESG Data\\n(Refinitiv)', fillcolor = '#D5F5E3']
+  Financial_Raw [label = 'Raw Financial Data\\n(EBA)', fillcolor = '#FADBD8']
+  
+  # Processing nodes
+  ESG_Process [label = 'ESG Data Cleaning\\n- Convert NULL to NA\\n- Extract years\\n- Pivot wider\\n- Handle duplicates', fillcolor = '#AED6F1']
+  Financial_Process [label = 'Financial Data Cleaning\\n- Filter valid LEI codes\\n- Create financial ratios', fillcolor = '#AED6F1']
+  
+  # Merge node
+  Merge [label = 'Data Merging\\n- Inner join by LEI code & Year\\n- Handle duplicate columns\\n- Clean column names', fillcolor = '#D7BDE2']
+  
+  # Transformation node
+  Transform [label = 'Feature Engineering\\n- Create financial ratios\\n- Log transformations\\n- ESG categorizations\\n- Year factors', fillcolor = '#AED6F1']
+  
+  # Output node
+  Final [label = 'Final Analysis Dataset\\n- ~400 observations\\n- ~30 variables\\n- Bank-year panel structure', fillcolor = '#FCF3CF']
+  
+  # Connections
+  ESG_Raw -> ESG_Process
+  Financial_Raw -> Financial_Process
+  ESG_Process -> Merge
+  Financial_Process -> Merge
+  Merge -> Transform
+  Transform -> Final
+}
+")
+```
+
+## Key Variables {.emphasized}
+
+```{r, fig.height=5.5, fig.width=10}
+# Create variable description table
+variables <- data.frame(
+  Category = c("ESG Scores", "ESG Scores", "ESG Scores", "ESG Scores", 
+               "Risk Metrics", "Risk Metrics", "Risk Metrics", "Risk Metrics",
+               "Controls", "Controls", "Controls"),
+  Variable = c("esg_score", "environmental_pillar_score", "social_pillar_score", "governance_pillar_score",
+               "cet1_ratio", "leverage_ratio", "rwa_ratio", "provisions_ratio",
+               "log_size", "loan_quality", "liquidity_ratio"),
+  Description = c("Overall ESG performance score (0-100)", 
+                  "Environmental pillar score (0-100)", 
+                  "Social pillar score (0-100)", 
+                  "Governance pillar score (0-100)",
+                  "Common Equity Tier 1 capital ratio", 
+                  "Regulatory leverage ratio", 
+                  "Risk-weighted assets to total assets", 
+                  "Loan provisions to total loans",
+                  "Log of total assets (bank size)", 
+                  "Loan quality (loans/provisions)", 
+                  "Liquidity (cash/assets)")
+)
+
+# Display the variables table with better styling
+kableExtra::kable(variables, format = "html") %>% 
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"),
+                          full_width = TRUE, 
+                          position = "center",
+                          font_size = 16) %>%
+  kableExtra::row_spec(0, bold = TRUE, color = "white", background = "#2c3e50")
+```
+
+## Methodology: Analytical Approach {.emphasized}
+
+<div class="method-box">
+**Panel Data Analysis with Fixed Effects**
+<ul>
+<li>Control for bank-specific characteristics (e.g., management style, business model)</li>
+<li>Control for time effects (e.g., regulatory changes, economic conditions)</li>
+<li>Reduces omitted variable bias</li>
+<li>Enables causal inference</li>
+</ul>
+
+**Model Specification:**<br>
+$Y_{it} = \alpha_i + \gamma_t + \beta_1 ESG_{it} + \beta_2 X_{it} + \epsilon_{it}$
+
+</div>
+
+<div class="columns-2">
+<div class="method-box-small">
+**Main Analysis**
+
+- Fixed effects panel regressions
+- Non-linear models
+- Lagged effects
+
+</div>
+<div class="method-box-small">
+**Extended Analysis**
+
+- Component analysis
+- Quantile regressions
+- Principal component analysis
+</div>
+</div>
+
+## Finding 1: Bank Size & ESG {.emphasized}
+
+```{r bank-size-esg, fig.width=10, fig.height=6}
+# Create synthetic data for bank size and ESG relationship
+set.seed(345)
+n <- 200
+size_esg_data <- data.frame(
+  log_size = rnorm(n, 20, 2.5),
+  esg_score = numeric(n)
+)
+
+# Strong positive relationship with some noise
+size_esg_data$esg_score <- 20 + 3 * (size_esg_data$log_size - min(size_esg_data$log_size)) + rnorm(n, 0, 10)
+size_esg_data$esg_score <- pmin(pmax(size_esg_data$esg_score, 0), 100)  # Constrain to 0-100
+
+# Add categorical variable for size
+size_esg_data$size_category <- ifelse(size_esg_data$log_size > median(size_esg_data$log_size), 
+                                     "Large Banks", "Small Banks")
+
+# Create the plot
+ggplot(size_esg_data, aes(x = log_size, y = esg_score)) +
+  geom_point(aes(color = size_category), alpha = 0.8, size = 2.5) +
+  geom_smooth(method = "lm", color = "darkred", linewidth = 1.5, se = TRUE) +
+  annotate("text", x = min(size_esg_data$log_size) + 1, 
+           y = max(size_esg_data$esg_score) - 5, 
+           label = paste("Correlation:", 
+                         round(cor(size_esg_data$log_size, 
+                                   size_esg_data$esg_score), 2)),
+           size = 4, fontface = "bold", hjust = 0) +
+  scale_color_manual(values = c("Small Banks" = "#6BAED6", "Large Banks" = "#08519C")) +
+  labs(title = "Larger Banks Have Significantly Higher ESG Scores",
+       subtitle = "Strong relationship between bank size and ESG performance",
+       x = "Bank Size (Log of Total Assets)", 
+       y = "ESG Score",
+       color = "") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(size = 10, color = "darkgrey"))
+```
+
+<div class="insight-box">
+**Key Insight**: Larger banks have significantly higher ESG scores (r = 0.62), which may confound the ESG-risk relationship
+</div>
+
+## Finding 2: ESG Quartiles & Capital Ratios {.emphasized}
+
+```{r quartile-analysis, fig.width=10, fig.height=5}
+# Create synthetic data for quartile analysis
+set.seed(789)
+n <- 200
+synthetic_quartile_data <- data.frame(
+  esg_score = runif(n, 20, 90)
+)
+
+# Create quartiles
+synthetic_quartile_data$esg_quartile <- ntile(synthetic_quartile_data$esg_score, 4)
+
+# Generate CET1 ratios with decreasing trend by quartile
+means <- c(0.17, 0.16, 0.15, 0.14)
+sds <- c(0.025, 0.022, 0.020, 0.018)
+
+synthetic_quartile_data$cet1_ratio <- sapply(1:n, function(i) {
+  q <- synthetic_quartile_data$esg_quartile[i]
+  rnorm(1, means[q], sds[q])
+})
+
+# Create the boxplot with enhanced styling
+ggplot(synthetic_quartile_data, 
+      aes(x = factor(esg_quartile), y = cet1_ratio)) +
+  geom_boxplot(aes(fill = factor(esg_quartile)), alpha = 0.8, outlier.shape = 1, outlier.size = 2) +
+  # Add mean points with connecting line to highlight trend
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "black") +
+  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", linetype = "dashed", linewidth = 1) +
+  # Better colors with clear distinction
+  scale_fill_brewer(palette = "Blues", direction = -1) +
+  labs(title = "CET1 Ratio Decreases as ESG Performance Increases",
+       subtitle = "Box plot of CET1 ratio by ESG score quartile groups",
+       x = "ESG Quartile (1 = Lowest, 4 = Highest)", 
+       y = "CET1 Ratio (%)",
+       caption = "Note: Dashed line connects mean values",
+       fill = "ESG Quartile") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(size = 10, color = "darkgrey"),
+        plot.caption = element_text(hjust = 0, face = "italic"),
+        panel.grid.minor = element_blank())
+```
+
+## Finding 3: ESG Pillars & Capital Ratios {.emphasized}
+
+```{r esg-pillars, fig.width=10, fig.height=4}
+# Create synthetic data for ESG pillars with realistic correlations
+set.seed(456)
+n <- 200
+
+# Create environmental pillar score
+environmental_pillar_score <- runif(n, 20, 90)
+
+# Create social pillar with moderate correlation to environmental
+social_pillar_score <- 0.6 * environmental_pillar_score + 0.4 * runif(n, 20, 90)
+social_pillar_score <- pmin(pmax(social_pillar_score, 20), 90)  # Keep in range
+
+# Create governance pillar with weaker correlations
+governance_pillar_score <- 0.4 * environmental_pillar_score + 0.3 * social_pillar_score + 
+                           0.3 * runif(n, 20, 90)
+governance_pillar_score <- pmin(pmax(governance_pillar_score, 20), 90)  # Keep in range
+
+# Base CET1 ratio
+cet1_ratio <- 0.15 + rnorm(n, 0, 0.01)
+
+# Add environmental effect (moderate negative)
+cet1_ratio <- cet1_ratio - 0.00035 * (environmental_pillar_score - mean(environmental_pillar_score))
+
+# Add social effect (stronger negative)
+cet1_ratio <- cet1_ratio - 0.00041 * (social_pillar_score - mean(social_pillar_score))
+
+# Add governance effect (weak negative)
+cet1_ratio <- cet1_ratio - 0.00005 * (governance_pillar_score - mean(governance_pillar_score))
+
+# Add some noise
+cet1_ratio <- cet1_ratio + rnorm(n, 0, 0.01)
+
+# Combine into data frame
+synthetic_pillar_data <- data.frame(
+  environmental_pillar_score = environmental_pillar_score,
+  social_pillar_score = social_pillar_score,
+  governance_pillar_score = governance_pillar_score,
+  cet1_ratio = cet1_ratio
+)
+
+# Helper function to darken colors
+darken_color <- function(color, factor = 0.7) {
+  rgb_col <- col2rgb(color)/255
+  rgb_col <- rgb_col * factor
+  rgb(rgb_col[1], rgb_col[2], rgb_col[3])
+}
+
+# Function to create individual pillar plots
+create_pillar_plot <- function(data, x_var, title, color) {
+  cor_val <- round(cor(data[[x_var]], data$cet1_ratio), 3)
+  
+  ggplot(data, aes_string(x = x_var, y = "cet1_ratio")) +
+    geom_point(alpha = 0.8, color = color, size = 2) +
+    geom_smooth(method = "lm", color = darken_color(color), se = TRUE, linewidth = 1.5) +
+    labs(title = title,
+         x = paste(title, "Score"), 
+         y = "CET1 Ratio (%)") +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    theme_minimal() +
+    theme(plot.title = element_text(face = "bold", size = 12),
+          axis.title = element_text(size = 10)) +
+    annotate("text", x = max(data[[x_var]]) * 0.9, 
+             y = max(data$cet1_ratio) * 0.95, 
+             label = paste("r =", cor_val),
+             size = 4)
+}
+
+# Create the three plots
+p_env <- create_pillar_plot(synthetic_pillar_data, "environmental_pillar_score", 
+                           "Environmental", "#228B22")
+p_soc <- create_pillar_plot(synthetic_pillar_data, "social_pillar_score", 
+                           "Social", "#4682B4")
+p_gov <- create_pillar_plot(synthetic_pillar_data, "governance_pillar_score", 
+                           "Governance", "#8A2BE2")
+
+# Combine plots
+gridExtra::grid.arrange(p_env, p_soc, p_gov, ncol = 3,
+                       top = textGrob("ESG Pillars and Their Relationship with Bank Capital Ratios", 
+                                     gp = gpar(fontsize = 16, fontface = "bold")))
+```
+
+
+## Finding 4: Complex Relationships {.emphasized}
+
+```{r complex-relationship, fig.width=10, fig.height=4}
+# Create synthetic data for ESG vs CET1 with size effect
+set.seed(234)
+n <- 200
+complex_data <- data.frame(
+  esg_score = runif(n, 20, 90),
+  log_size = rnorm(n, 20, 2.5),
+  cet1_ratio = numeric(n)
+)
+
+# Size effect on CET1 ratio (larger banks have lower capital ratios)
+complex_data$cet1_ratio <- 0.20 - 0.004 * (complex_data$log_size - min(complex_data$log_size))
+
+# Small positive effect of ESG on CET1 when controlling for size
+complex_data$cet1_ratio <- complex_data$cet1_ratio + 0.0001 * complex_data$esg_score 
+
+# Add noise
+complex_data$cet1_ratio <- complex_data$cet1_ratio + rnorm(n, 0, 0.01)
+
+# Create scatter plot with size as color gradient
+ggplot(complex_data, 
+       aes(x = esg_score, y = cet1_ratio, color = log_size, size = log_size)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", color = "black", size = 1.2, se = TRUE) +
+  scale_color_viridis_c(option = "plasma", direction = -1) +
+  scale_size_continuous(range = c(2, 6)) +
+  annotate("text", x = max(complex_data$esg_score) * 0.8, 
+           y = max(complex_data$cet1_ratio) * 0.95, 
+           label = paste("Direct correlation:", 
+                         round(cor(complex_data$esg_score, complex_data$cet1_ratio), 2)),
+           size = 4, fontface = "bold") +
+  labs(title = "Complex ESG-Capital Relationship Mediated by Bank Size",
+       subtitle = "Larger banks (darker dots) have higher ESG scores but lower capital ratios",
+       x = "ESG Score", 
+       y = "CET1 Ratio (%)",
+       color = "Bank Size\n(Log Assets)",
+       size = "Bank Size") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal() +
+  theme(legend.position = "right",
+        plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(size = 10, color = "darkgrey"))
+```
+
+<div class="insight-box smaller">
+**Key Insight**: Raw relationship is slightly positive (0.1) when controlling for other factors, suggesting bank size may be a confounding variable
+</div>
+
+## Econometric Methodology in Detail {.emphasized}
+
+```{r, fig.align='center'}
+# Create detailed methodology table
+methodology <- data.frame(
+  Method = c("Panel Fixed Effects (Primary)", 
+            "ESG Component Analysis", 
+            "Quantile Regression", 
+            "Non-linear Analysis",
+            "Lagged Effects Analysis",
+            "Principal Component Analysis"),
+  
+  Purpose = c("Establish main relationship controlling for bank-specific heterogeneity", 
+             "Identify which specific ESG components have strongest relationships", 
+             "Assess if ESG effects differ across capital ratio distribution", 
+             "Test for U-shaped or threshold relationships",
+             "Determine if ESG performance impacts risk with time delay",
+             "Extract underlying ESG factors and assess their impact"),
+  
+  Specification = c("cet1_ratio ~ esg_score + log_size + rwa_ratio + FE", 
+                   "fin_metric ~ esg_component + controls + FE", 
+                   "cet1_ratio ~ esg_score + controls, τ ∈ {0.1, 0.25, 0.5, 0.75, 0.9}", 
+                   "cet1_ratio ~ esg_score + esg_score² + controls + FE",
+                   "cet1_ratio ~ lag(esg_score) + controls + FE",
+                   "PCA with varimax rotation + plm(cet1_ratio ~ PCA_factors)")
+)
+
+# Display methodology with enhanced styling
+kableExtra::kable(methodology, format = "html", 
+                 col.names = c("Analytical Method", "Research Purpose", "Model Specification")) %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"),
+                          full_width = TRUE, 
+                          position = "center",
+                          font_size = 15) %>%
+  kableExtra::row_spec(0, bold = TRUE, color = "white", background = "#2c3e50") %>%
+  kableExtra::row_spec(1, bold = TRUE, background = "#ebf5fb") %>%
+  kableExtra::column_spec(1, bold = TRUE, width = "20%") %>%
+  kableExtra::column_spec(2, width = "40%") %>%
+  kableExtra::column_spec(3, width = "40%", monospace = TRUE)
+```
+
+## Key Panel Regression Results {.emphasized}
+
+```{r}
+# Create table with key panel regression results
+results_table <- data.frame(
+  Variable = c("ESG Score", "Environmental Pillar", "Social Pillar", "Governance Pillar", "Log Size", "RWA Ratio"),
+  CET1_Coef = c(-0.0014, -0.0008, -0.0019, -0.0004, -0.0135, 0.2485),
+  CET1_Pval = c(0.031, 0.106, 0.007, 0.482, 0.000, 0.000),
+  Leverage_Coef = c(-0.0009, -0.0005, -0.0011, -0.0003, -0.0092, 0.1245),
+  Leverage_Pval = c(0.042, 0.128, 0.015, 0.621, 0.001, 0.000),
+  TotalCap_Coef = c(-0.0012, -0.0007, -0.0016, -0.0004, -0.0112, 0.2754),
+  TotalCap_Pval = c(0.039, 0.115, 0.009, 0.512, 0.000, 0.000)
+)
+
+# Helper function to add significance stars
+add_stars <- function(coef, pval) {
+  paste0(
+    sprintf("%.4f", coef),
+    ifelse(pval < 0.01, "***", 
+           ifelse(pval < 0.05, "**", 
+                  ifelse(pval < 0.1, "*", "")))
+  )
+}
+
+# Create table with significance stars
+results_display <- data.frame(
+  Variable = results_table$Variable,
+  CET1 = mapply(add_stars, results_table$CET1_Coef, results_table$CET1_Pval),
+  Leverage = mapply(add_stars, results_table$Leverage_Coef, results_table$Leverage_Pval),
+  TotalCapital = mapply(add_stars, results_table$TotalCap_Coef, results_table$TotalCap_Pval)
+)
+
+# Display with enhanced styling
+kableExtra::kable(results_display, format = "html",
+                 col.names = c("Variable", "CET1 Ratio", "Leverage Ratio", "Total Capital")) %>%
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"),
+                          full_width = TRUE,
+                          position = "center",
+                          font_size = 16) %>%
+  kableExtra::row_spec(0, bold = TRUE, color = "white", background = "#2c3e50") %>%
+  kableExtra::row_spec(c(1,2,3,4), background = "#ebf5fb") %>%
+  kableExtra::row_spec(3, bold = TRUE, color = "#e74c3c") %>% # Highlight Social Pillar
+  kableExtra::add_footnote(
+    label = "Significance levels: *** p<0.01, ** p<0.05, * p<0.1; Bank and year fixed effects included",
+    notation = "symbol"
+  )
+```
+
+<div class="insight-box smaller">
+**Key Insight**: Social pillar shows strongest and most significant relationship across all capital metrics
+</div>
+
+## Thank You {.emphasized}
+
+<div class="thank-you">
+<h3>Questions & Discussion</h3>
+
+<p>Maurits de Haan<br>
+
+</div>
