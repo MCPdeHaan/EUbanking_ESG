@@ -1,15 +1,17 @@
 ---
 title: "ESG Performance and Banking Risk"
-subtitle: "Research Progress Update"
 author: "Maurits de Haan"
 date: "`r format(Sys.Date(), '%d %B %Y')`"
 output:
   ioslides_presentation:
     widescreen: true
-    css: custom.css
+    css: "custom.css"
     logo: fno_logo.png
     transition: faster
     smaller: false
+  beamer_presentation: default
+subtitle: Research Progress Update
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -33,7 +35,7 @@ library(htmltools)
 
 ## Research Background & Objectives {.build}
 
-**Industry Context**
+**Context**
 
 - Banking sector under increasing pressure for ESG integration
 - Regulatory push toward sustainable finance
@@ -48,21 +50,17 @@ library(htmltools)
 
 <div class="question-box">
 **Primary Question**<br>
-How does ESG performance influence banking risk metrics, particularly capital adequacy in Eurozone banks between 2020-2023?
+How does ESG performance influence banking risk metrics, particularly capital adequacy, in Eurozone banks between 2020-2023?
 </div>
 
-<div class="columns-3">
+<div class="columns-2">
 <div class="question-box-small">
 **Component Analysis**<br>
-Which ESG pillars have the strongest relationship with risk metrics?
+Which ESG components have the strongest relationship with risk metrics? -> Determine strategy
 </div>
 <div class="question-box-small">
 **Size Mediation**<br>
 How does bank size mediate the ESG-risk relationship?
-</div>
-<div class="question-box-small">
-
-</div>
 </div>
 
 ## Dataset {.emphasized}
@@ -71,8 +69,7 @@ How does bank size mediate the ESG-risk relationship?
 <div>
 **ESG Data (LSEG Refinitiv)**
 
-- Comprehensive ESG scores for Eurozone banks
-- Overall score plus pillar breakdown
+- Comprehensive ESG scores for most Eurozone banks
 - Component-level granularity
 - Consistent methodology post-2019
 - Industry-standard metrics
@@ -80,7 +77,7 @@ How does bank size mediate the ESG-risk relationship?
 **Research Period**
 
 - 2020-2023 (annual data)
-- Balanced between data availability and reliability
+
 </div>
 <div>
 **Banking Risk Data (EBA)**
@@ -90,13 +87,12 @@ How does bank size mediate the ESG-risk relationship?
 - Leverage ratios
 - Risk-weighted assets
 - Provisions data
-- Recently made public
 
 **Final Dataset**
 
 - ~400 bank-year observations
 - ~100 unique banks
-- Complete panel for core metrics
+
 </div>
 </div>
 
@@ -177,14 +173,11 @@ kableExtra::kable(variables, format = "html") %>%
 <div class="method-box">
 **Panel Data Analysis with Fixed Effects**
 <ul>
-<li>Control for bank-specific characteristics (e.g., management style, business model)</li>
-<li>Control for time effects (e.g., regulatory changes, economic conditions)</li>
-<li>Reduces omitted variable bias</li>
-<li>Enables causal inference</li>
+<li>Control for bank and time effects</li>
 </ul>
 
 **Model Specification:**<br>
-$Y_{it} = \alpha_i + \gamma_t + \beta_1 ESG_{it} + \beta_2 X_{it} + \epsilon_{it}$
+$Y_{it} = \alpha_i + \beta_1 ESG_{it} + \gamma_t + \beta_2 X_{it} + \epsilon_{it}$
 
 </div>
 
@@ -472,62 +465,10 @@ kableExtra::kable(methodology, format = "html",
   kableExtra::column_spec(3, width = "40%", monospace = TRUE)
 ```
 
-## Key Panel Regression Results {.emphasized}
-
-```{r}
-# Create table with key panel regression results
-results_table <- data.frame(
-  Variable = c("ESG Score", "Environmental Pillar", "Social Pillar", "Governance Pillar", "Log Size", "RWA Ratio"),
-  CET1_Coef = c(-0.0014, -0.0008, -0.0019, -0.0004, -0.0135, 0.2485),
-  CET1_Pval = c(0.031, 0.106, 0.007, 0.482, 0.000, 0.000),
-  Leverage_Coef = c(-0.0009, -0.0005, -0.0011, -0.0003, -0.0092, 0.1245),
-  Leverage_Pval = c(0.042, 0.128, 0.015, 0.621, 0.001, 0.000),
-  TotalCap_Coef = c(-0.0012, -0.0007, -0.0016, -0.0004, -0.0112, 0.2754),
-  TotalCap_Pval = c(0.039, 0.115, 0.009, 0.512, 0.000, 0.000)
-)
-
-# Helper function to add significance stars
-add_stars <- function(coef, pval) {
-  paste0(
-    sprintf("%.4f", coef),
-    ifelse(pval < 0.01, "***", 
-           ifelse(pval < 0.05, "**", 
-                  ifelse(pval < 0.1, "*", "")))
-  )
-}
-
-# Create table with significance stars
-results_display <- data.frame(
-  Variable = results_table$Variable,
-  CET1 = mapply(add_stars, results_table$CET1_Coef, results_table$CET1_Pval),
-  Leverage = mapply(add_stars, results_table$Leverage_Coef, results_table$Leverage_Pval),
-  TotalCapital = mapply(add_stars, results_table$TotalCap_Coef, results_table$TotalCap_Pval)
-)
-
-# Display with enhanced styling
-kableExtra::kable(results_display, format = "html",
-                 col.names = c("Variable", "CET1 Ratio", "Leverage Ratio", "Total Capital")) %>%
-  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"),
-                          full_width = TRUE,
-                          position = "center",
-                          font_size = 16) %>%
-  kableExtra::row_spec(0, bold = TRUE, color = "white", background = "#2c3e50") %>%
-  kableExtra::row_spec(c(1,2,3,4), background = "#ebf5fb") %>%
-  kableExtra::row_spec(3, bold = TRUE, color = "#e74c3c") %>% # Highlight Social Pillar
-  kableExtra::add_footnote(
-    label = "Significance levels: *** p<0.01, ** p<0.05, * p<0.1; Bank and year fixed effects included",
-    notation = "symbol"
-  )
-```
-
-<div class="insight-box smaller">
-**Key Insight**: Social pillar shows strongest and most significant relationship across all capital metrics
-</div>
-
 ## Thank You {.emphasized}
 
 <div class="thank-you">
-<h3>Questions & Discussion</h3>
+<h3>Questions & Feedback</h3>
 
 <p>Maurits de Haan<br>
 
