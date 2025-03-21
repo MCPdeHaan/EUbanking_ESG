@@ -1,6 +1,6 @@
 library(dplyr); library(janitor); library(tidyverse)
 
-# merge only rows where both ESG and financial data exist
+# merge rows where both ESG and financial data exist
 data_analysis <- inner_join(ESG, financial_year, 
                             by = c("LEI_code", "Year"), 
                             suffix = c(".esg", ".fin")) %>%
@@ -48,7 +48,7 @@ data_analysis <- inner_join(ESG, financial_year,
                        include.lowest = TRUE)
   )
 
-# 2. Optional full join dataset 
+# Optional full join dataset 
 data_full <- full_join(ESG, financial_year, 
                        by = c("LEI_code", "Year"), 
                        suffix = c(".esg", ".fin")) %>%
