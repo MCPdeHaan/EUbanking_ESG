@@ -6,7 +6,6 @@ library(stargazer); library(psych); library(gridExtra)
 panel_data <- pdata.frame(data_analysis, index = c("lei_code", "year"))
 
 # --- Panel regression model --- 
-
 # Function to run fixed effects models with robust standard errors
 run_fe_model <- function(formula, data) {
   model <- plm(formula, data = data, model = "within")

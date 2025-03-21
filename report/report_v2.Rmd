@@ -1,0 +1,122 @@
+---
+title: "ESG and banking risk"
+author: "Maurits de Haan (s8161658, m.c.p.dehaan@students.uu.nl)"
+date: | 
+  | 3rd of April, 2025
+  | Course: Data Science Lab (ECB3DSL), Academic year 2024/2025
+  | Individual internship for FNO Zorg voor Kansen
+  | Supervisor: Dr. Ulrich Zierahn-Weilage
+  | Word Count: XXXX (max 5000)
+output:
+    pdf_document:
+      toc: false
+      toc_depth: 3
+      number_sections: true
+      fig_height: 4
+      fig_width: 6
+      includes:
+        in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract {.unnumbered}
+[write here]
+
+| Statements |
+|------------------------------|
+| **Statement of Originality** | 
+| I, the aforementioned student, herewith declare to have written this document and that I am responsible for the content of it. I declare that the text and the work presented in this document is original and that no sources other than those mentioned in the text and its references have been used in creating it. |
+| Utrecht University School of Economics is responsible solely for the supervision of completion of the work, not for the content. |
+| All questions about this paper can be directed to the author. | 
+|------------------------------|
+| **Disclosure Statement** |
+| In this project, I have made use of the following Generative AI tools: ChatGPT 4o (reasoning), Claude 3.5 Sonnet (coding) |
+| ChatGPT 4o was used to help with reasoning about the methodology that would be usefull to use and the way in which this can be implemented. It was used as an extension of my own knowledge and as an external check on the assumptions I made about certain methodologies. Claude 3.5 Sonnet was utilised for certain coding tasks, mostly when it was outside of the scope of what I have learned earlier. All code that was provided by the model was thouroughly checked and validated if it was actully true (and in most cases I had to rewrite it completely). Next to that, Claude was used to integrate some functions in the code that I wrote. Claude was also used to help with for example a .tex file to include the image in the header of this file and other "nice-to-have" things. |
+| All content in this report was written by myself and not by ChatGPT. Most was first written by hand and then typed in RStudio. | 
+|------------------------------|
+| **Signature**
+| |
+
+
+\newpage 
+
+\tableofcontents
+
+\newpage
+
+# Introduction
+In recent years, the role of environmental, social, and governance (ESG)  considerations in banking has gained significant attention in both academic and policy fields. Growing concerns about climate change, inequality and good governance have increased the interest how corporations and banks through their lending decision can drive the transition to a more sustainable and equitable economy (Carnevale & Drago, 2024; European Banking Authority, 2018; EU, 2014). Many banks across Europe are subject to Pillar 3 disclosures under the Capital Requirements Regulation (CRR), and new ESG disclosures further highlight climate and sustainability exposures (De Barros Fritz & Gentile, 2024). Policymakers and financial experts argue that improved ESG performance may help banks reduce their overall risk exposure, particularly by enhancing their reputation, improving stakeholder trust, and anticipating regulatory changes. However, whether ESG practices truly mitigate banking risk or whether lower-risk institutions merely find it easier to allocate resources toward socially responsible projects remains an open empirical question. This paper contributes to this debate by focusing on capital adequacy which reflects banking risk and using regulatory data instead of annual reports. In this paper, the relationship between ESG performance and capital ratios for European banks from 2020 to 2023 is analysed.
+
+From a societal perspective, understanding whether strong ESG engagement leads to more resilient financial institutions carries high relevance. If banks with robust ESG strategies exhibit lower risk, this supports integrating ESG considerations into prudential regulation and highlights banks’ capacity to contribute to broader societal objectives without jeopardizing their stability. Conversely, if safer banks are simply better able to “afford” ESG investments, this suggests a different policy focus (e.g. financial health determines ESG commitments needed to be made). From a scientific standpoint, this study adds nuance to a growing literature that often uses conventional balance-sheet data to proxy risk, which may not fully capture regulatory metrics. By leveraging publicly available data from the European Banking Authority (EBA) , we gain a more reliable view of risk-weighted assets, Tier 1 capital, leverage, and provision levels. Pairing these risk metrics with granular ESG data from LSEG Refinitiv further strengthens the empirical inquiry, because the ESG scores (and their component pillars) benefit from refined post-2019 methodologies.
+
+Based on the financial and ESG dataset, this paper employs a panel-data approach that exploits the ‘short-longitudinal’ structure of our dataset, comprising approximately 100 unique Eurozone banks, covering over 400 bank-year observations between 2020 and 2023. Fixed effects models allow us to control for unobserved heterogeneity at both the bank and time level, reducing omitted-variable bias. We further investigate potential non-linear effects by adding squared ESG terms, conduct lagged analyses to explore dynamic responses between ESG changes and future banking risk, and test for heterogeneous effects with quantile regressions. Finally, a principal component analysis on ESG sub-scores (see Figure X) provides an alternative way to capture the underlying dimensions of ESG and investigate their separate impacts on various risk metrics.
+
+A brief overview of my main findings indicates the following patterns. First, in a baseline fixed-effects analysis pooling all banks, the overall ESG score shows only a modest and sometimes statistically insignificant relationship with CET1, Tier 1, and total capital ratios when using conventional robust standard errors. However, once we employ Driscoll-Kraay corrections (which account for cross-sectional dependence), a positive and significant effect emerges between ESG performance and CET1 ratios. Furthermore, restricting attention to banks with complete data over the four-year period yields stronger evidence of a beneficial ESG effect on capital adequacy. Decomposing ESG into its environmental, social, and governance pillars suggests that governance, and in some cases social-related strategies (such as corporate social responsibility), may drive much of the observed relationship—albeit with varying signs and significance across different specifications. Extended analyses (including quantile regressions and principal component analysis) reveal that individual components, particularly governance- and CSR-related dimensions, tend to be most strongly associated with capital adequacy measures.
+
+[conclusion of Intro]
+
+# Literature Review
+
+The growing incorporation of environmental, social, and governance (ESG) considerations in banking decision-making has led to a growing body of research analysing whether and how ESG practices shape financial risk and performance. 
+
+## ESG and firm capital
+
+Fundamental papers often focus on corporate bond markets, demonstrating that firms with stronger ESG profiles benefit from lower cost of debt and better credit ratings. For instance, Apergis et al. (2022) report that lower ESG ratings tend to increase the default risk premium charged by investors, thus suggesting that ESG factors influence the pricing of unsecured corporate debt.
+
+Further connections between ESG metrics and cost of capital have been explored by Chava (2014), who finds that firms who are involved in many environmental controvocies are penalized with higher equity and debt costs. While the magnitude of this penalty varies across subcomponents of ESG, it does suggest that, overall, markets incorporate sustainability signals into the required returns on capital. Yet, other scholars remain more cautious about conclusive results. Menz (2010), studying European corporate bonds, finds no strong link between corporate social responsibility (CSR) and secondary market credit spreads, an outcome possibly attributed to the incomplete integration of ESG in bond pricing at the time. Similarly, Amiraslani et al. (2017) observe that the positive effect of strong social capital emerges primarily in times of crisis, such as during the 2008–2009 financial turmoil, when trust and default risk dominate market concerns. They show that high-social-capital firms could secure funding at lower costs during the height of the crisis but found no pronounced link between social capital and bond spreads in more stable years.
+
+In parallel with bond-market research, work on the relationship between ESG factors and bank loan pricing has grown. Goss and Roberts (2010) detail how banks acquire additional information from corporate ESG ratings, which translates to higher loan spreads on firms with CSR concerns. Banks effectively penalize borrowers with shortcoming ESG profiles unless those loans are well secured (Goss & Roberts, 2010). Subsequent reviews corroborate that higher ESG risk can lead to elevated bank lending costs (Carnevale & Drago, 2024). However, while evidence of this ESG “penalty” is common, differences often arise across ESG pillars, with governance sometimes playing a more substantial role in lowering perceived borrower risk.
+
+## ESG and banking lending 
+
+A parallel literature narrows its scope to banks themselves, examining whether ESG performance among banking institutions correlates with risk proxies such as default risk, nonperforming loans, tail risk, and market-based measures of capital adequacy. Curcio et al. (2024), for instance, use a sample of European banks and insurers to show that stronger ESG performance in nonfinancial counterparties reduces banks’ overall systemic risk exposure, albeit with nuanced differences when environmental and social facets are considered separately. This finding aligns with broader arguments that strong ESG engagement can enhance reputational capital, trustworthiness, and stakeholder relationships, all of which mitigate operational and credit risk [SOURCE].
+
+Empirical efforts to measure direct effects of ESG on bank-specific outcomes often rely on risk-weighted capital ratios or default probability metrics. Several papers employ Merton-style distance to default or Z-scores to capture how ESG performance might reduce a bank’s vulnerability to extreme negative shocks (Chiaramonte et al., 2022; Danisman & Tarazi, 2023). The emerging consensus suggests that ESG considerations relate meaningfully to bank resilience. However, it remains unclear how the pathways are caused (e.g. via lower loan losses, improved reputational capital, or heightened stakeholder trust) (Gehrig et al., 2023). There is also extensive research focusing on operational risk: Galletta et al. (2022) document that higher ESG scores consistently reduce banks’ operational loss events, reflecting lower reputational and compliance risk. Indeed, ESG issues can directly affect operational strategies, especially during evolving regulatory standards and public scrutiny of sustainability issues.
+
+Despite a shared recognition that sustainability dimensions matter for financial risk of banks, important theoretical and empirical debates persist if this relationship can be identified as causal. One strand, often related to stakeholder theory, proposes that deliberate ESG initiatives improve a bank’s reputation, stakeholder satisfaction, and regulatory preparedness (Godfrey, 2005; He et al., 2021). Consequently, these banks have stronger buffers against unforeseen market stresses, which may translate into stronger capital ratios or lower cost of funding. Another line of inquiry, however, posits that less risky institutions simply have the resources and latitude to engage in more robust ESG activities (Bouslah et al., 2013; Cornett et al., 2016). In that scenario, risk is arguably a precursor, rather than an outcome, of sustainability engagement. Studies such as Gehrig et al. (2023) and Danisman and Tarazi (2023) attempt to mitigate such endogeneity and simultaneity concerns by using instrumental variables or dynamic panel methodologies. 
+
+## ESG Pillar scores
+
+Researchers have further highlighted that different ESG pillars do not necessarily exert uniform effects on a bank’s capital adequacy. The governance dimension, for instance, has repeatedly been identified as a strong predictor of stability because it reflects managerial skill, board structure, and the capacity to address emerging sustainability concerns systematically (Chodnicka-Jaworska, 2021; Cohen, 2023). Environmental scores may be particularly relevant for banks exposed to climate-sensitive sectors, while the social dimension exhibits more mixed results [SOURCE]. For example, some studies show minimal or inconsistent links between social scores and measures such as credit spreads or default risks (Amiraslani et al., 2017; Izcan & Bektas, 2022), whereas others find that employee relations and community engagements can bolster goodwill and mitigate downside risk in stress periods (Ashwin Kumar et al., 2016).
+
+Overall, the literature indicates that ESG has become a critical component in assessing and shaping banks’ risk profiles. Heightened stakeholder, regulatory, and market pressures ensure that ESG considerations pervade more areas of banking strategy, including the allocation of capital and management of risk-weighted assets. While a growing number of studies point to ESG factors lowering the likelihood of severe capital depletion, conclusive evidence about directionality and pillar-specificity remains somewhat inconclusive. 
+
+# Data 
+
+The dataset employed in this study combines two sources of bank-level information for EBA member countries: regulatory bank data and ESG data. This paper focusses on European banks that are a member of the regulatory institution the European Banking Authority (EBA). The member countries include all Eurozone counties, apart from Croatia and Slovakia, non-Eurozone countries that are transitioning to adopting the euro (Bulgaria, Hungary, Poland, Romania and Sweden), Denmark (opt-out for Eurozone participation). Next to that, the EBA also has some non-EU countries as members, such as Norway, Iceland and Liechtenstein.  These countries are all included in the initial data-gathering. For all countries, the included banks are those with their headquarter in that country. 
+
+## Regulatory bank data
+
+For the regulatory financial data, the EBA data from the EU-Wide Transparency Exercise is used. This is validated date by banks and EU supervisors (official regarded to as "Historical KM"). The total EBA dataset include 100 banks, with a total of 400 bank-year observations. The data is available from the third quarter of 2019 onwards to the third quarter of 2024. Since the ESG data is in full years, only the data from 2020 to 2023 is used and the yearly values are calculated. This data contains standardized regulatory metrics for Eurozone banks, including, among others, total assets, total equity, loan and advance amounts, provisions, and various capital ratios. Originally the data contained over 12,000 observations, since each bank's financial metric was recorded as a separate observation. The data was therefore pivoted wider, so that a more structures and easier to merge dataset originates. Each financial variable now has its own column. Next to that, several financial ratios were calculated, for example the equity to assets, loan to assets and provision ratio. All variables in the dataset can be found in table X in the appendix. 
+
+## ESG data
+
+The Refinitiv database of the London Stock Exchange Group (LSEG) was used for collecting the ESG ratings. Refinitiv is the most widely used database in academic and operational analysis about sustainability ratings. ESG ratings and reporting practices have undergone refinement in recent years, especially after 2019 (Mandas et al., 2024; Fitch, 2022; Moody’s, 2022; S&P Global, 2022), implying that more recent data are likely to capture richer and more standardized information about sustainability. Papers examining European banks from 2020 onward can thus rely on these improved ESG data sets (Curcio et al., 2024; Sun et al., 2024). Such refinements are crucial because risk-related metrics, especially regarding capital buffers, hinge on regulatory definitions and supervisory guidelines, which have also evolved to incorporate ESG-related climate stress testing (BCBS, 2020; EBA, 2021).
+
+During the data retrieving process, first all public and private companies were filtered on ICB sector code (Banking, 301010) and then on the countries where these banks have their headquarters corresponding to the EBA financial dataset. Then, the ESG variables were selected. This was done broadly, so the general ESG scores, pillar scores and component scores were all included. This namely makes it possible to execute principal component analysis later. The ESG scores were retrieved as scores (range 1-100, higher is better) rather than letter-grade ratings. This was done to make quantitative analysis more precise and understandable. Also, the NULL variables were changes to NA, the year columns were changes to rows (so that each bank in a certain year has their own row) and variable names were uniformed. 
+
+## Merging 
+
+The merged dataset was constructed by performing an inner join between the regulatory data (EBA) and ESG data (Refinitiv). This merging approach ensured that only banks and years appearing in both datasets are retained for the final analytical sample. This ensures that each record in the final dataset contains both the regulatory capital and risk information and the ESG performance indicators for a given institution-year observation. The two datasets were merged on the bank name and the year. Since the bank names differ between the two datasets, the Legal Entity Identifier (LEI) was used to merge the datasets. 
+
+
+# Descriptive Analyses
+
+# Methodology
+
+
+# Results
+
+
+# Conclusion
+
+# Appendix
+
+## References
+
+## Tables
+
+## Figures
