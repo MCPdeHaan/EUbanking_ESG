@@ -68,7 +68,8 @@ ESG_good <- ESG %>%
   filter(!if_all(
     .cols = -c(name, country, lei_code, year),
     .fns = is.na
-  ))
+  )) %>%
+  clean_names()
 
 glimpse(ESG)
 colnames(ESG)

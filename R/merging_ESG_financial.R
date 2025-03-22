@@ -1,7 +1,7 @@
 library(dplyr); library(tidyverse)
 
 # merge rows where both ESG and financial data exist
-data_analysis <- inner_join(ESG, financial_annual, 
+data_analysis <- inner_join(ESG_good, financial_annual, 
                             by = c("lei_code", "year"), 
                             suffix = c(".esg", ".fin")) %>%
   # Handle duplicate name and country columns
@@ -14,19 +14,6 @@ data_analysis <- inner_join(ESG, financial_annual,
   select(lei_code, year, name, country, everything()) %>%
   # Add financial ratios and transformations
   mutate(
-    # Financial ratios
-    equity_to_assets = total_equity / total_assets,
-    loan_to_assets = gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value / 
-      total_assets,
-    provisions_ratio = provisions / 
-      gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value,
-    liquidity_ratio = cash_cash_balances_at_central_banks_and_other_demand_deposits / total_assets,
-    # Log transformations
-    log_assets = log(total_assets),
-    # Risk measures
-    loan_quality = gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value / 
-      provisions,
-    rwa_ratio = total_risk_exposure_amount / total_assets,
     # ESG categorizations
     esg_quartile = ntile(esg_score, 4),
     env_quartile = ntile(environmental_pillar_score, 4),
@@ -42,26 +29,16 @@ data_analysis <- inner_join(ESG, financial_annual,
   )
 
 # Optional full join dataset 
-data_full <- full_join(ESG, financial_year, 
-                       by = c("LEI_code", "Year"), 
+data_full <- full_join(ESG, financial_annual, 
+                       by = c("lei_code", "year"), 
                        suffix = c(".esg", ".fin")) %>%
   mutate(
-    Name = coalesce(Name.esg, Name.fin),
-    Country = coalesce(Country.esg, Country.fin)
+    name = coalesce(name.esg, name.fin),
+    country = coalesce(country.esg, country.fin)
   ) %>%
-  select(-Name.esg, -Name.fin, -Country.esg, -Country.fin) %>%
-  select(LEI_code, Year, Name, Country, everything()) %>%
+  select(-name.esg, -name.fin, -country.esg, -country.fin) %>%
+  select(lei_code, year, name, country, everything()) %>%
   clean_names()
-
-# Rename variables for cleaner code
-data_analysis <- data_analysis %>%
-  rename(
-    cet1_ratio = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-    tier1_ratio = tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-    total_capital_ratio = total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-    leverage_ratio = leverage_ratio_using_a_transitional_definition_of_tier_1_capital,
-    log_size = log_assets
-  )
 
 # export data_analysis
 write_csv(data_analysis, "data/data_analysis.csv")

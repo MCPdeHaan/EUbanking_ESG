@@ -49,7 +49,7 @@ financial_annual <- financial_annual %>%
     -tier_1_capital_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied_transitional_definition,
     -total_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
     -total_capital_transitional_period_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
-    -total_capital_as_a_percentage_of_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied, 
+    -total_capital_as_a_percentage_of_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied
   ) %>%
   select(lei_code, year, country, name, everything()) %>%
   rename(
@@ -65,5 +65,17 @@ financial_annual <- financial_annual %>%
     cet1_risk_exposure = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
     tier1_risk_exposure = tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
     totalcap_risk_exposure = total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
-    leverage_ratio = leverage_ratio_using_a_transitional_definition_of_tier_1_capital, 
+    leverage_ratio = leverage_ratio_using_a_transitional_definition_of_tier_1_capital
+  ) %>%
+  mutate(
+    # Financial ratios
+    equity_to_assets = total_equity / total_assets,
+    loan_to_assets = gross_carrying_amount / total_assets,
+    provisions_ratio = provisions / gross_carrying_amount,
+    liquidity_ratio = cash_balance / total_assets,
+    # Log transformation of assets
+    log_assets = log(total_assets),
+    # Risk measures
+    loan_quality = gross_carrying_amount / provisions,
+    rwa_ratio = total_risk_exposure_amount / total_assets
   )
