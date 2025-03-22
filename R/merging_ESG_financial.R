@@ -7,7 +7,8 @@ data_analysis <- inner_join(ESG_good, financial_annual,
   # Handle duplicate name and country columns
   mutate(
     name = coalesce(name.esg, name.fin),
-    country = coalesce(country.esg, country.fin)
+    country = coalesce(country.esg, country.fin),
+    year = as.integer(year)
   ) %>%
   select(-name.esg, -name.fin, -country.esg, -country.fin) %>%
   # Reorder columns for clarity

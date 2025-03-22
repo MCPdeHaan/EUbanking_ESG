@@ -74,8 +74,9 @@ financial_annual <- financial_annual %>%
     loan_to_assets = gross_carrying_amount / total_assets,
     provisions_ratio = provisions / gross_carrying_amount,
     liquidity_ratio = cash_balance / total_assets,
-    # Log transformation of assets
+    # Controls
     log_assets = log(total_assets),
+    equity_to_assets <- total_equity / total_assets,
     # Risk measures
     loan_quality = gross_carrying_amount / provisions,
     rwa_ratio = total_risk_exposure_amount / total_assets
