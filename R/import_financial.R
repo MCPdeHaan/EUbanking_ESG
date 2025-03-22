@@ -1,30 +1,68 @@
-library(tidyverse)
+library(tidyverse); library(janitor)
 
-financial <- read_csv("data/Historical KM.csv")
+financial <- read_csv("data/Historical KM.csv") 
 
-financial_year <- read_csv("data/Historical KM.csv") %>%
-  # Convert Period to character and extract Year as an integer
-  mutate(
-    Period = as.character(Period),
-    Year = as.integer(str_sub(Period, 1, 4))
-  ) %>%
-  # Exclude periods starting with "2019" or "2024"
-  filter(!str_starts(Period, "2019") & !str_starts(Period, "2024")) %>%
-  # Aggregate to one row per bank-year-label
-  group_by(LEI_code, Name, NSA, Country, Year, Label) %>%
-  summarise(Amount = sum(Amount, na.rm = TRUE), .groups = "drop") %>%
-  # Pivot data so each label becomes a column
+# Pivot data to one row per bank per quarter with each label as separate column
+financial_wide <- financial %>%
   pivot_wider(
     names_from = Label,
-    values_from = Amount,
-    values_fill = list(Amount = 0)
-  ) %>%
-  # Remove rows with invalid LEI_code and drop the NSA column
-  filter(LEI_code != "XXXXXXXXXXXXXXXXXXXX") %>%
-  select(-NSA) %>%
-  # Clean up LEI_code by trimming whitespace
-  mutate(LEI_code = trimws(LEI_code))
+    values_from = Amount
+  )
 
-glimpse(financial_year)
-colnames(financial_year)
-summary(financial_year)
+# Aggregate quarterly data into annual totals for each bank by
+financial_annual <- financial_wide %>%
+  clean_names() %>%
+  mutate(year = substr(period, 1, 4)) %>% 
+  group_by(lei_code, year) %>%
+  summarise(
+    across(where(is.numeric), ~ sum(.x, na.rm = TRUE)),
+    country = first(country),
+    name = first(name),
+    .groups = "drop"
+  )
+
+financial_annual <- financial_annual %>%
+  filter(!str_starts(year, "2019") & !str_starts(year, "2024")) %>%
+  filter(lei_code != "XXXXXXXXXXXXXXXXXXXX") %>%
+  select(
+    -period,
+    -item,
+    -item_hist,
+    -perf_status,
+    -common_equity_tier_1_cet1_capital_transitional_period_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
+    -common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
+    -credit_risk_excluding_ccr_and_securitisations,
+    -financial_assets_at_fair_value_through_other_comprehensive_income,
+    -financial_assets_designated_at_fair_value_through_profit_or_loss,
+    -financial_liabilities_designated_at_fair_value_through_profit_or_loss,
+    -gross_carrying_amount_on_loans_and_advances_including_at_amortised_cost_and_fair_value,
+    -leverage_ratio_total_exposure_measure_using_a_transitional_definition_of_tier_1_capital,
+    -liabilities_included_in_disposal_groups_classified_as_held_for_sale,
+    -non_trading_financial_assets_mandatorily_at_fair_value_through_profit_or_loss,
+    -non_trading_non_derivative_financial_liabilities_measured_at_a_cost_based_method1,
+    -other_assets,
+    -other_liabilities,
+    -other_risk_exposure_amounts,
+    -position_foreign_exchange_and_commodities_risks_market_risk,
+    -tier_1_as_a_percentage_of_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
+    -tier_1_capital_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied_transitional_definition,
+    -total_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
+    -total_capital_transitional_period_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
+    -total_capital_as_a_percentage_of_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied, 
+  ) %>%
+  select(lei_code, year, country, name, everything()) %>%
+  rename(
+    cash_balance = cash_cash_balances_at_central_banks_and_other_demand_deposits,
+    cet1 = common_equity_tier_1_cet1_capital_transitional_period,
+    credit_risk = counterparty_credit_risk_ccr_excluding_cva,
+    credit_valuation = credit_valuation_adjustment_cva,
+    fair_value = fair_value_changes_of_the_hedged_items_in_portfolio_hedge_of_interest_rate_risk,
+    financial_liabilities_at_amortised_cost = financial_liabilities_measured_at_amortised_cost,
+    gross_carrying_amount = gross_carrying_amount_on_cash_balances_at_central_banks_and_other_demand_deposits,
+    haircuts = haircuts_for_trading_liabilities_at_fair_value1,
+    securitisation_exposures = securitisation_exposures_in_the_banking_book_after_the_cap,
+    cet1_risk_exposure = common_equity_tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
+    tier1_risk_exposure = tier_1_as_a_percentage_of_risk_exposure_amount_transitional_definition,
+    totalcap_risk_exposure = total_capital_as_a_percentage_of_risk_exposure_amount_transitional_definition,
+    leverage_ratio = leverage_ratio_using_a_transitional_definition_of_tier_1_capital, 
+  )
