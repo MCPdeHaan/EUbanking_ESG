@@ -49,7 +49,8 @@ financial_annual <- financial_annual %>%
     -tier_1_capital_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied_transitional_definition,
     -total_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
     -total_capital_transitional_period_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
-    -total_capital_as_a_percentage_of_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied
+    -total_capital_as_a_percentage_of_risk_exposure_amount_as_if_ifrs_9_or_analogous_ec_ls_transitional_arrangements_had_not_been_applied,
+    -tier_1_capital_transitional_definition_numerator_of_leverage_ratio
   ) %>%
   select(lei_code, year, country, name, everything()) %>%
   rename(

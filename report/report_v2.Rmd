@@ -8,7 +8,7 @@ date: |
   | Supervisor: Dr. Ulrich Zierahn-Weilage
   | Word Count: XXXX (max 5000)
 output:
-    pdf_document:
+  bookdown::pdf_document2:
       toc: false
       toc_depth: 3
       number_sections: true
@@ -19,7 +19,12 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE)
+```
+
+```{r}
+library(knitr)
+library(kableExtra)
 ```
 
 # Abstract {.unnumbered}
@@ -90,7 +95,7 @@ The dataset employed in this study combines two sources of bank-level informatio
 
 ## Regulatory bank data
 
-For the regulatory financial data, the EBA data from the EU-Wide Transparency Exercise is used. This is validated date by banks and EU supervisors (official regarded to as "Historical KM"). The total EBA dataset include 100 banks, with a total of 400 bank-year observations. The data is available from the third quarter of 2019 onwards to the third quarter of 2024. Since the ESG data is in full years, only the data from 2020 to 2023 is used and the yearly values are calculated. This data contains standardized regulatory metrics for Eurozone banks, including, among others, total assets, total equity, loan and advance amounts, provisions, and various capital ratios. Originally the data contained over 12,000 observations, since each bank's financial metric was recorded as a separate observation. The data was therefore pivoted wider, so that a more structures and easier to merge dataset originates. Each financial variable now has its own column. Next to that, several financial ratios were calculated, for example the equity to assets, loan to assets and provision ratio. All variables in the dataset can be found in table X in the appendix. 
+For the regulatory financial data, the EBA data from the EU-Wide Transparency Exercise is used. This is validated date by banks and EU supervisors (official regarded to as "Historical KM"). The total EBA dataset include 100 banks, with a total of 400 bank-year observations. The data is available from the third quarter of 2019 onwards to the third quarter of 2024. Since the ESG data is in full years, only the data from 2020 to 2023 is used and the yearly values are calculated. This data contains standardized regulatory metrics for Eurozone banks, including, among others, total assets, total equity, loan and advance amounts, provisions, and various capital ratios. Originally the data contained over 12,000 observations, since each bank's financial metric was recorded as a separate observation. The data was therefore pivoted wider, so that a more structures and easier to merge dataset originates. Each financial variable now has its own column. Next to that, several financial ratios were calculated, for example the equity to assets, loan to assets and provision ratio. All variables in the dataset can be found in \@ref(tab:variables-table) in the appendix. 
 
 ## ESG data
 
@@ -118,5 +123,19 @@ The merged dataset was constructed by performing an inner join between the regul
 ## References
 
 ## Tables
+
+```{r variables-table, echo=FALSE}
+source("variables_df.R")
+kable(variables_df, 
+      caption = "Overview of variables", 
+      booktabs = TRUE,
+      longtable = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"),
+                font_size = 9) %>%
+  column_spec(1, bold = TRUE, width = "2.5in") %>%
+  column_spec(2, width = "2.5in") %>%
+  column_spec(3, width = "1in")
+```
+
 
 ## Figures
