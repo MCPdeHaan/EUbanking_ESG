@@ -49,24 +49,24 @@ ESG <- read_csv("data/ESG_Refinitiv_import.csv", show_col_types = FALSE) %>%
       )
   } %>%
   rename(
-    LEI_code = `Legal Entity ID (LEI)`,
-    Country = `Country of Headquarters`,
-    Name = `Company Common Name`,
-    Year = year
+    lei_code = `Legal Entity ID (LEI)`,
+    country = `Country of Headquarters`,
+    name = `Company Common Name`,
+    year = year
   ) %>%
   mutate(
-    LEI_code = trimws(LEI_code),
-    Year = as.integer(Year)
+    lei_code = trimws(lei_code),
+    year = as.integer(year)
   ) %>%
   # Convert all non-identifier columns to numeric
-  mutate(across(-c(Name, Country, LEI_code, Year), as.numeric)) %>%
+  mutate(across(-c(name, country, lei_code, year), as.numeric)) %>%
   # Remove unnecessary columns
   select(-`Code`, -`ICB Industry name`, -`GICS Sub-Industry Name`, -`ICB Sector name`, -`ISIN`)
 
 # filter out rows where all non-identifier columns are NA.
 ESG_good <- ESG %>%
   filter(!if_all(
-    .cols = -c(Name, Country, LEI_code, Year),
+    .cols = -c(name, country, lei_code, year),
     .fns = is.na
   ))
 

@@ -13,6 +13,7 @@ financial_wide <- financial %>%
 financial_annual <- financial_wide %>%
   clean_names() %>%
   mutate(year = substr(period, 1, 4)) %>% 
+  mutate(year = as.integer(year)) %>%
   group_by(lei_code, year) %>%
   summarise(
     across(where(is.numeric), ~ sum(.x, na.rm = TRUE)),
