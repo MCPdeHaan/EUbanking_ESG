@@ -146,12 +146,12 @@ library(kableExtra)
 library(modelsummary)
 library(broom)
 
-# Source the R script with your functions
-source(here::here("R", "import_ESG.R"))
-source(here::here("R", "import_financial.R"))
-source(here::here("R", "merging_ESG_financial.R"))
-source(here::here("R", "analysis2.R"))
-
+sink(file = tempfile())
+invisible(source(here::here("R", "import_ESG.R")))
+invisible(source(here::here("R", "import_financial.R")))
+invisible(source(here::here("R", "merging_ESG_financial.R")))
+invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
+sink()
 
 # Display the tables
 ms_esg_table
