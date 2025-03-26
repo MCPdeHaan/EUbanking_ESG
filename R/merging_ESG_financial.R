@@ -1,4 +1,4 @@
-library(dplyr); library(tidyverse)
+library(dplyr); library(tidyverse); library(janitor)
 
 # merge rows where both ESG and financial data exist
 data_analysis <- inner_join(ESG_good, financial_annual, 
@@ -26,7 +26,11 @@ data_analysis <- inner_join(ESG_good, financial_annual,
     esg_category = cut(esg_score, 
                        breaks = c(0, 33, 66, 100),
                        labels = c("Low", "Medium", "High"),
-                       include.lowest = TRUE)
+                       include.lowest = TRUE),
+    esg_score_squared = esg_score^2,
+    environmental_pillar_score_squared = environmental_pillar_score^2,
+    social_pillar_score_squared = social_pillar_score^2,
+    governance_pillar_score_squared = governance_pillar_score^2
   )
 
 # Optional full join dataset 
@@ -40,6 +44,5 @@ data_full <- full_join(ESG, financial_annual,
   select(-name.esg, -name.fin, -country.esg, -country.fin) %>%
   select(lei_code, year, name, country, everything()) %>%
   clean_names()
-
 # export data_analysis
 write_csv(data_analysis, "data/data_analysis.csv")

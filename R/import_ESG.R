@@ -1,4 +1,4 @@
-library(readr); library(tidyverse)
+library(readr); library(tidyverse); library(janitor)
 
 # import dataset and replace any "NULL" strings with NA.
 ESG <- read_csv("data/ESG_Refinitiv_import.csv", show_col_types = FALSE) %>%

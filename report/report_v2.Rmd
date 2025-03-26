@@ -137,5 +137,25 @@ kable(variables_df,
   column_spec(3, width = "1in")
 ```
 
+```{r}
+# Load required libraries
+library(plm)
+library(dplyr)
+library(stargazer)
+library(kableExtra)
+library(modelsummary)
+library(broom)
+
+# Source the R script with your functions
+source(here::here("R", "import_ESG.R"))
+source(here::here("R", "import_financial.R"))
+source(here::here("R", "merging_ESG_financial.R"))
+source(here::here("R", "analysis2.R"))
+
+
+# Display the tables
+ms_esg_table
+ms_pillar_table
+```
 
 ## Figures
