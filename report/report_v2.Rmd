@@ -154,6 +154,7 @@ invisible(source(here::here("R", "import_financial.R")))
 invisible(source(here::here("R", "merging_ESG_financial.R")))
 invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
 invisible(source(here::here("R", "analysis_quantile.R")))
+invisible(source(here::here("R", "analysis_pca.R")))
 sink()
 
 # Display the tables
@@ -208,5 +209,27 @@ make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
 make_pillar_table(results$coefficients$pillars, "leverage_ratio")
 ```
 
+```{r}
+# Run the PCA analysis
+pca_results <- run_pca_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "totalcap_risk_exposure", "leverage_ratio", "provisions", 
+               "provisions_ratio", "liquidity_ratio", "rwa_ratio"),
+  variance_threshold = 0.8
+)
+
+# Display visualizations in the report
+pca_results$visualizations$scree_plot
+```
+
+\newpage
+
+```{r}
+pca_results$visualizations$loading_plot
+pca_results$visualizations$pc_interpretation
+pca_results$visualizations$pc_model_table
+pca_results$visualizations$comparison_table
+```
 
 ## Figures

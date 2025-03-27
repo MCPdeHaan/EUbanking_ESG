@@ -166,19 +166,42 @@ run_pca_esg_analysis <- function(data,
   biplot_data$short_name <- gsub("_", " ", biplot_data$short_name)
   biplot_data$short_name <- tools::toTitleCase(biplot_data$short_name)
   
+  # Calculate positions for text labels with slight offset from arrow endpoints
+  # This helps reduce overlapping text
+  text_offset <- 0.05
+  biplot_data$text_x <- biplot_data$PC1 * (1 + text_offset)
+  biplot_data$text_y <- biplot_data$PC2 * (1 + text_offset)
+  
   loading_plot <- ggplot(biplot_data, aes(x = PC1, y = PC2, label = short_name)) +
     geom_segment(aes(x = 0, y = 0, xend = PC1, yend = PC2), 
                  arrow = arrow(length = unit(0.2, "cm")), color = "red") +
-    geom_text(hjust = 0, vjust = 0, size = 3) +
+    geom_text(aes(x = text_x, y = text_y, label = short_name), 
+              hjust = ifelse(biplot_data$PC1 > 0, 0, 1),
+              vjust = ifelse(biplot_data$PC2 > 0, 0, 1),
+              size = 3,
+              fontface = "bold",
+              check_overlap = TRUE) +
     labs(
       title = "Variable Loadings on First Two Principal Components",
-      x = paste0("PC1 (", round(var_explained[1] * 100, 1), "% of variance)"),
-      y = paste0("PC2 (", round(var_explained[2] * 100, 1), "% of variance)")
+      subtitle = "Based on ESG component scores",
+      x = paste0("\nPC1 (", round(var_explained[1] * 100, 1), "% of variance)"),
+      y = paste0("PC2 (", round(var_explained[2] * 100, 1), "% of variance)\n")
     ) +
+    
+    # Consistent plot dimensions
     xlim(c(-1, 1)) + ylim(c(-1, 1)) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
     geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
-    theme_minimal()
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 14, face = "bold", margin = margin(b = 10)),
+      plot.subtitle = element_text(size = 11, margin = margin(b = 15)),
+      axis.title.x = element_text(margin = margin(t = 10, b = 5)),
+      axis.title.y = element_text(margin = margin(r = 10, l = 5)),
+      panel.grid.minor = element_blank(),
+      plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+    )
+  
   
   # 7.3: Create PC interpretation table
   # Find top contributors to each PC
