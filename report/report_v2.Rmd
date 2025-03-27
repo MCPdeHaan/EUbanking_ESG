@@ -145,6 +145,8 @@ library(stargazer)
 library(kableExtra)
 library(modelsummary)
 library(broom)
+library(ggplot2)
+library(gridExtra)
 
 sink(file = tempfile())
 invisible(source(here::here("R", "import_ESG.R")))
@@ -161,39 +163,50 @@ ms_pillar_table
 
 
 ```{r}
+# Run the quantile regression analysis
 results <- run_simplified_esg_analysis(
   data = data_analysis,  
   dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
                "leverage_ratio", "provisions_ratio"),
   tau_values = c(0.1, 0.25, 0.5, 0.75, 0.9)
 )
+```
+
+```{r}
 results$plots$combined$esg
+```
+
+\newpage
+
+```{r}
 results$plots$combined$environmental
+```
+
+```{r}
 results$plots$combined$social
+```
+
+\newpage
+
+```{r}
 results$plots$combined$governance
 ```
 
 ```{r}
-# Get raw summary data
+# Create summary tables
 summary_data <- get_raw_summary_tables(
   results$coefficients$esg, 
   results$coefficients$pillars
 )
 
-# Display ESG summary
+# Display summary tables
 make_simple_esg_summary_table(summary_data)
-```
-
-```{r}
-# Display pillar summary
 make_simple_pillar_summary_table(summary_data)
-```
 
-```{r}
-# CET1 Risk Exposure - ESG Score Coefficients
+# Create detailed tables for specific variables
 make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
-# Leverage Ratio - ESG Pillar Coefficients
 make_pillar_table(results$coefficients$pillars, "leverage_ratio")
 ```
+
 
 ## Figures
