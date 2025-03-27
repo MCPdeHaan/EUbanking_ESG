@@ -151,11 +151,49 @@ invisible(source(here::here("R", "import_ESG.R")))
 invisible(source(here::here("R", "import_financial.R")))
 invisible(source(here::here("R", "merging_ESG_financial.R")))
 invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
+invisible(source(here::here("R", "analysis_quantile.R")))
 sink()
 
 # Display the tables
 ms_esg_table
 ms_pillar_table
+```
+
+
+```{r}
+results <- run_simplified_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "leverage_ratio", "provisions_ratio"),
+  tau_values = c(0.1, 0.25, 0.5, 0.75, 0.9)
+)
+results$plots$combined$esg
+results$plots$combined$environmental
+results$plots$combined$social
+results$plots$combined$governance
+```
+
+```{r}
+# Get raw summary data
+summary_data <- get_raw_summary_tables(
+  results$coefficients$esg, 
+  results$coefficients$pillars
+)
+
+# Display ESG summary
+make_simple_esg_summary_table(summary_data)
+```
+
+```{r}
+# Display pillar summary
+make_simple_pillar_summary_table(summary_data)
+```
+
+```{r}
+# CET1 Risk Exposure - ESG Score Coefficients
+make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
+# Leverage Ratio - ESG Pillar Coefficients
+make_pillar_table(results$coefficients$pillars, "leverage_ratio")
 ```
 
 ## Figures
