@@ -27,6 +27,33 @@ library(knitr)
 library(kableExtra)
 ```
 
+```{r}
+# Load required libraries
+library(plm)
+library(dplyr)
+library(stargazer)
+library(kableExtra)
+library(modelsummary)
+library(broom)
+library(ggplot2)
+library(gridExtra)
+library(plm)
+library(AER)
+library(gridExtra)
+library(kableExtra)
+library(modelsummary)
+
+sink(file = tempfile())
+invisible(source(here::here("R", "import_ESG.R")))
+invisible(source(here::here("R", "import_financial.R")))
+invisible(source(here::here("R", "merging_ESG_financial.R")))
+invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
+invisible(source(here::here("R", "analysis_quantile.R")))
+invisible(source(here::here("R", "analysis_pca.R")))
+invisible(source(here::here("R", "analysis_iv.R")))
+invisible(source(here::here("R", "analysis_exp")))
+```
+
 # Abstract {.unnumbered}
 [write here]
 
@@ -110,6 +137,103 @@ The merged dataset was constructed by performing an inner join between the regul
 
 # Descriptive Analyses
 
+
+# Run exploratory analysis
+exploratory_results <- run_exploratory_analysis(data_analysis)
+
+# Create formatted report
+exploratory_report <- create_exploratory_report(exploratory_results)
+```
+
+## Exploratory Analysis
+
+```{r exploratory-data-overview}
+# Display data overview
+exploratory_report$data_coverage
+```
+
+```{r exploratory-country-composition}
+# Display country composition
+exploratory_report$country_composition
+```
+
+```{r exploratory-summary-stats}
+# Display summary statistics
+exploratory_report$summary_statistics
+```
+
+```{r exploratory-yearly-esg}
+# Display yearly ESG trends
+exploratory_report$yearly_esg
+```
+
+```{r exploratory-esg-by-size, fig.height=7, fig.width=9}
+# Display ESG by size if available
+if(!is.null(exploratory_report$esg_by_size)) {
+  exploratory_report$esg_by_size
+}
+```
+
+```{r exploratory-esg-dist, fig.height=5, fig.width=10}
+# Display ESG distribution plot
+if(!is.null(exploratory_report$esg_dist_plot)) {
+  exploratory_report$esg_dist_plot
+}
+```
+
+```{r exploratory-trends, fig.height=5, fig.width=10}
+# Display ESG trends
+if(!is.null(exploratory_report$esg_trends_plot)) {
+  exploratory_report$esg_trends_plot
+}
+```
+
+```{r exploratory-risk-trends, fig.height=4, fig.width=8}
+# Display risk trends
+if(!is.null(exploratory_report$risk_trend_plot)) {
+  exploratory_report$risk_trend_plot
+}
+```
+
+```{r exploratory-risk-by-esg}
+# Display risk by ESG quartile
+if(!is.null(exploratory_report$risk_by_esg)) {
+  exploratory_report$risk_by_esg
+}
+```
+
+```{r exploratory-scatter-plots, fig.height=4, fig.width=8}
+# Display ESG vs CET1 scatter plot
+if(!is.null(exploratory_report$esg_cet1_plot)) {
+  exploratory_report$esg_cet1_plot
+}
+```
+
+```{r exploratory-pillar-plots, fig.height=4, fig.width=10}
+# Display pillar vs leverage plots
+if(!is.null(exploratory_report$pillar_leverage_plots)) {
+  exploratory_report$pillar_leverage_plots
+}
+```
+
+```{r exploratory-change-analysis}
+# Display change analysis
+if(!is.null(exploratory_report$change_analysis)) {
+  exploratory_report$change_analysis
+}
+```
+
+```{r exploratory-change-plots, fig.height=8, fig.width=10}
+# Display change plots
+if(!is.null(exploratory_report$esg_change_plot) && !is.null(exploratory_report$risk_esg_change_plot)) {
+  grid.arrange(
+    exploratory_report$esg_change_plot,
+    exploratory_report$risk_esg_change_plot,
+    ncol = 1
+  )
+}
+```
+
 # Methodology
 
 
@@ -138,31 +262,6 @@ kable(variables_df,
 ```
 
 ```{r}
-# Load required libraries
-library(plm)
-library(dplyr)
-library(stargazer)
-library(kableExtra)
-library(modelsummary)
-library(broom)
-library(ggplot2)
-library(gridExtra)
-library(plm)
-library(AER)
-library(gridExtra)
-library(kableExtra)
-library(modelsummary)
-
-sink(file = tempfile())
-invisible(source(here::here("R", "import_ESG.R")))
-invisible(source(here::here("R", "import_financial.R")))
-invisible(source(here::here("R", "merging_ESG_financial.R")))
-invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
-invisible(source(here::here("R", "analysis_quantile.R")))
-invisible(source(here::here("R", "analysis_pca.R")))
-invisible(source(here::here("R", "analysis_iv.R")))
-sink()
-
 # Display the tables
 ms_esg_table
 ms_pillar_table
