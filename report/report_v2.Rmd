@@ -311,9 +311,22 @@ iv_comparison_plot
 Table \@ref(tab:iv-summary) compares our fixed effects and IV estimates across different risk measures.
 
 ```{r iv-summary, echo=FALSE}
-iv_summary_table %>%
-  kable(caption = "Summary of IV and Fixed Effects Results") %>%
-  kable_styling(latex_options = c("hold_position"))
+if (exists("iv_results") && !is.null(iv_results$iv_summary_table)) {
+  iv_results$iv_summary_table %>%
+    kable(format = "latex", caption = "Summary of IV and Fixed Effects Results") %>%
+    kable_styling(latex_options = c("hold_position"))
+} else if (exists("iv_summary_table")) {
+  iv_summary_table %>%
+    kable(format = "latex", caption = "Summary of IV and Fixed Effects Results") %>%
+    kable_styling(latex_options = c("hold_position"))
+} else {
+  # Create a placeholder table if neither exists
+  data.frame(
+    Message = "IV summary results not available"
+  ) %>%
+    kable(format = "latex", caption = "Summary of IV and Fixed Effects Results") %>%
+    kable_styling(latex_options = c("hold_position"))
+}
 ```
 
 ```{r percent-diff, echo=FALSE, fig.cap="Percentage Differences Between IV and FE Estimates"}
