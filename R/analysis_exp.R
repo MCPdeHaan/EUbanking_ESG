@@ -179,8 +179,14 @@ run_exploratory_analysis <- function(data, min_obs_per_bank = 3) {
         TRUE ~ "Control Variables"
       )
     ) %>%
-    arrange(Category, Variable) %>%
-    mutate(across(c(Mean, SD, Min, Q1, Median, Q3, Max), ~round(., 3)))
+    arrange(Category, Variable) 
+  
+  summary_long <- summary_long %>%
+    mutate(across(c(Mean, SD, Min, Q1, Median, Q3, Max), 
+                  ~as.numeric(as.character(.)), 
+                  .names = "{.col}")) %>%
+    mutate(across(c(Mean, SD, Min, Q1, Median, Q3, Max), 
+                  ~round(., 3)))
   
   # Create a nicer variable description
   var_labels <- c(
