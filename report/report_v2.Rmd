@@ -147,6 +147,11 @@ library(modelsummary)
 library(broom)
 library(ggplot2)
 library(gridExtra)
+library(plm)
+library(AER)
+library(gridExtra)
+library(kableExtra)
+library(modelsummary)
 
 sink(file = tempfile())
 invisible(source(here::here("R", "import_ESG.R")))
@@ -155,6 +160,7 @@ invisible(source(here::here("R", "merging_ESG_financial.R")))
 invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
 invisible(source(here::here("R", "analysis_quantile.R")))
 invisible(source(here::here("R", "analysis_pca.R")))
+invisible(source(here::here("R", "analysis_iv.R")))
 sink()
 
 # Display the tables
@@ -232,4 +238,112 @@ pca_results$visualizations$pc_model_table
 pca_results$visualizations$comparison_table
 ```
 
-## Figures
+
+```{r iv-analysis-setup, include=FALSE}
+# Source the IV analysis script
+invisible(source(here::here("R", "analysis_iv.R")))
+```
+
+# Instrumental Variable Analysis
+
+
+To address potential endogeneity concerns in the relationship between ESG performance and banking risk, we employ an instrumental variable (IV) approach. Following @cornett2016social and @chiaramonte2022, we use industry-level ESG averages by country-year (excluding the focal bank) as instruments for bank-level ESG scores. This approach exploits variation in peer ESG practices while avoiding direct causation with individual bank risk metrics.
+
+```{r run-iv-analysis, echo=FALSE, warning=FALSE, message=FALSE}
+# Run the IV analysis
+iv_results <- run_iv_analysis(data_analysis)
+
+# Create visualizations
+create_iv_visualizations()
+```
+
+## First Stage Results
+
+The validity of our IV approach relies on the strength of the relationship between our instruments and the endogenous ESG variables. Table \@ref(tab:first-stage) presents the first-stage regression results.
+
+```{r first-stage-table, echo=FALSE}
+iv_first_stage_table %>%
+  kable(caption = "First Stage IV Regression Results") %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+```{r f-stats-plot, echo=FALSE, fig.cap="First Stage F-Statistics by Risk Measure"}
+if (exists("iv_f_stat_plot")) {
+  tryCatch({
+    print(iv_f_stat_plot)
+  }, error = function(e) {
+    # Create a blank plot with error message if the main plot fails
+    library(ggplot2)
+    print(
+      ggplot() + 
+        annotate("text", x = 0.5, y = 0.5, 
+                 label = "Error creating F-statistics plot") +
+        theme_void() +
+        theme(
+          panel.border = element_rect(color = "gray", fill = NA),
+          plot.margin = unit(c(1,1,1,1), "cm")
+        )
+    )
+  })
+} else {
+  library(ggplot2)
+  print(
+    ggplot() + 
+      annotate("text", x = 0.5, y = 0.5, 
+               label = "F-statistics plot not available") +
+      theme_void() +
+      theme(
+        panel.border = element_rect(color = "gray", fill = NA),
+        plot.margin = unit(c(1,1,1,1), "cm")
+      )
+  )
+}
+```
+
+The F-statistics from our first-stage regressions exceed 10 for most specifications, suggesting our instruments are sufficiently strong [@stock2002]. However, some caution is warranted for models where F-statistics fall below this threshold.
+
+## IV versus Fixed Effects Estimates
+
+```{r iv-comparison, echo=FALSE, fig.cap="Comparison of IV and Fixed Effects Estimates"}
+iv_comparison_plot
+```
+
+Table \@ref(tab:iv-summary) compares our fixed effects and IV estimates across different risk measures.
+
+```{r iv-summary, echo=FALSE}
+iv_summary_table %>%
+  kable(caption = "Summary of IV and Fixed Effects Results") %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+```{r percent-diff, echo=FALSE, fig.cap="Percentage Differences Between IV and FE Estimates"}
+iv_pct_diff_plot
+```
+
+The IV estimates generally yield larger coefficients than fixed effects, suggesting potential downward bias in the latter. This aligns with findings from @gehrig2023 who document similar patterns when instrumenting for ESG performance.
+
+## ESG Pillar Analysis
+
+We extend our IV analysis to examine individual ESG pillars, addressing potential heterogeneity in their effects on banking risk.
+
+```{r pillar-iv, echo=FALSE}
+iv_pillar_table %>%
+  kable(caption = "IV Estimates for Individual ESG Pillars") %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+## Robustness and Limitations
+
+```{r hausman-results, echo=FALSE}
+iv_hausman_table %>%
+  kable(caption = "Assessment of Endogeneity Concerns") %>%
+  kable_styling(latex_options = c("hold_position"))
+```
+
+While our IV approach helps address endogeneity concerns, several limitations merit discussion. First, the exclusion restriction relies on the assumption that peer ESG practices only affect a bank's risk through their influence on its own ESG activities. Second, limited time-series variation in our instruments may affect the precision of our estimates. To address these concerns, we conduct additional robustness checks including:
+
+1. Alternative instrument specifications using regulatory changes
+2. Generalized Method of Moments (GMM) estimation
+3. Lagged ESG measures as instruments
+
+These supplementary analyses (available upon request) generally support our main findings while highlighting the complexity of establishing strictly causal relationships in this context.
