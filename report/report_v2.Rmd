@@ -43,7 +43,6 @@ library(gridExtra)
 library(kableExtra)
 library(modelsummary)
 
-sink(file = tempfile())
 invisible(source(here::here("R", "import_ESG.R")))
 invisible(source(here::here("R", "import_financial.R")))
 invisible(source(here::here("R", "merging_ESG_financial.R")))
@@ -51,7 +50,7 @@ invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
 invisible(source(here::here("R", "analysis_quantile.R")))
 invisible(source(here::here("R", "analysis_pca.R")))
 invisible(source(here::here("R", "analysis_iv.R")))
-invisible(source(here::here("R", "analysis_exp")))
+invisible(source(here::here("R", "analysis_exp.R")))
 ```
 
 # Abstract {.unnumbered}
@@ -137,7 +136,7 @@ The merged dataset was constructed by performing an inner join between the regul
 
 # Descriptive Analyses
 
-
+```{r}
 # Run exploratory analysis
 exploratory_results <- run_exploratory_analysis(data_analysis)
 
