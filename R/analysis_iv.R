@@ -329,8 +329,15 @@ run_iv_analysis <- function(data,
     fe_p <- 2 * pt(abs(fe_coef / fe_se), df = fe_model$df.residual, lower.tail = FALSE)
     iv_p <- 2 * pt(abs(iv_coef / iv_se), df = iv_model$df.residual, lower.tail = FALSE)
     
-    fe_sig <- ifelse(fe_p < 0.001, "***", ifelse(fe_p < 0.01, "**", ifelse(fe_p < 0.05, "*", ifelse(fe_p < 0.1, "†", ""))))
-    iv_sig <- ifelse(iv_p < 0.001, "***", ifelse(iv_p < 0.01, "**", ifelse(iv_p < 0.05, "*", ifelse(iv_p < 0.1, "†", ""))))
+    fe_sig <- ifelse(fe_p < 0.001, "***", 
+                     ifelse(fe_p < 0.01, "**", 
+                            ifelse(fe_p < 0.05, "*", 
+                                   ifelse(fe_p < 0.1, "†", ""))))
+    
+    iv_sig <- ifelse(iv_p < 0.001, "***", 
+                     ifelse(iv_p < 0.01, "**", 
+                            ifelse(iv_p < 0.05, "*", 
+                                   ifelse(iv_p < 0.1, "†", ""))))
     
     # Extract F-statistic from first stage (if available)
     f_stat <- NA
@@ -352,17 +359,38 @@ run_iv_analysis <- function(data,
   
   if (length(summary_rows) > 0) {
     summary_table <- do.call(rbind, summary_rows)
+    
+    # Clean up any potential regex symbols in the table
+    for(col in colnames(summary_table)) {
+      if(is.character(summary_table[[col]])) {
+        # Replace any regex-like patterns that might cause rendering issues
+        summary_table[[col]] <- gsub("\\^\\[\\[:digit:\\]\\].*", "", summary_table[[col]])
+      }
+    }
+    
     all_risk_summary <- kable(summary_table,
                               col.names = c("Risk Measure", "FE Coefficient", "SE", "IV Coefficient", "SE", "First Stage F"),
                               caption = "Comparison of FE and IV Estimates for ESG Score Across Risk Measures",
                               booktabs = TRUE,
+                              escape = TRUE,  # Add this to escape special LaTeX characters
                               align = c("l", "c", "c", "c", "c", "c")) %>% 
-      kable_styling(latex_options = c("striped", "HOLD_position"), full_width = FALSE, font_size = 9) %>% 
+      kable_styling(latex_options = c("striped", "HOLD_position", "scale_down"), 
+                    full_width = FALSE, 
+                    font_size = 8) %>% 
+      column_spec(1, width = "1.5in") %>%  # Set width without wrap parameter
       add_footnote("†p<0.1; *p<0.05; **p<0.01; ***p<0.001. Standard errors in parentheses.", notation = "none")
   } else {
     all_risk_summary <- kable(data.frame(Message = "No valid IV models could be estimated. Check your data."),
                               caption = "IV Analysis Results") %>% 
       kable_styling(latex_options = c("HOLD_position"), full_width = FALSE, font_size = 9)
+  }
+  
+  # Also modify the create_iv_visualizations function to ensure the TRUE output is hidden
+  create_iv_visualizations <- function() {
+    # Original code remains the same
+    
+    # Return invisibly to prevent printing TRUE
+    invisible(TRUE)
   }
   
   # -------------------------------

@@ -247,17 +247,30 @@ invisible(source(here::here("R", "analysis_iv.R")))
 # Instrumental Variable Analysis
 
 
-```{r}
-# Run the IV analysis on your dataset (e.g., data_analysis)
+```{r iv-display, fig.height=5, fig.width=8, results='hide'}
+# Run the IV analysis on your dataset
 iv_results <- run_iv_analysis(data_analysis)
-# Ensure all visualization objects are available
-create_iv_visualizations()
+# Make sure all visualization objects are available (hide the TRUE output)
+invisible(create_iv_visualizations())
+```
 
-iv_summary_table
-iv_comparison_plot
-iv_f_stat_plot
-iv_pct_diff_plot
-iv_hausman_table
+```{r iv-summary-table, fig.width=6}
+# Format the summary table to fit better
+iv_summary_table %>%
+  kable_styling(font_size = 8, latex_options = "scale_down")
+```
+
+```{r iv-plots, fig.height=9, fig.width=8}
+# Arrange plots in a grid with appropriate sizing
+grid.arrange(
+  iv_comparison_plot + theme(plot.margin = margin(0.1, 0.1, 0.5, 0.1, "cm")),
+  iv_pct_diff_plot + theme(plot.margin = margin(0.5, 0.1, 0.1, 0.1, "cm")),
+  ncol = 1,
+  heights = c(1.3, 1)
+)
+```
+
+```{r}
 iv_pillar_table
 ```
 
