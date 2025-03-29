@@ -694,11 +694,17 @@ run_iv_analysis <- function(data,
                  notation = "none")
   
   # Store important outputs in global variables
-  iv_summary_table <<- all_risk_summary
-  iv_comparison_plot <<- comparison_plot
-  iv_f_stat_plot <<- iv_f_stat_plot
-  iv_pct_diff_plot <<- pct_diff_plot
-  iv_hausman_table <<- hausman_table
+  results <- list(
+    iv_summary_table = all_risk_summary,
+    iv_comparison_plot = comparison_plot, 
+    iv_f_stat_plot = iv_f_stat_plot,
+    iv_pct_diff_plot = pct_diff_plot,
+    iv_hausman_table = hausman_table,
+    iv_pillar_table = iv_pillar_table,
+    iv_first_stage_table = iv_first_stage_table
+  )
+  
+  return(results)
   
   # Store a representative pillar and first stage table for example
   if (length(comparison_tables) > 0) {
