@@ -37,6 +37,38 @@ run_iv_analysis <- function(data,
                                          "totalcap_risk_exposure", "leverage_ratio", "provisions", 
                                          "provisions_ratio", "liquidity_ratio", "rwa_ratio")) {
   
+  # Step 0: Validate input data
+  if (is.null(data) || nrow(data) == 0) {
+    warning("Empty or NULL dataset provided. Cannot proceed with IV analysis.")
+    return(NULL)
+  }
+  
+  required_columns <- c("esg_score", "environmental_pillar_score", "social_pillar_score", 
+                        "governance_pillar_score", "log_assets", "equity_to_assets", "year", "lei_code")
+  missing_columns <- setdiff(required_columns, colnames(data))
+  
+  if (length(missing_columns) > 0) {
+    warning(paste("Missing required columns:", paste(missing_columns, collapse = ", ")))
+    return(NULL)
+  }
+  
+  # Check if at least one dependent variable exists in the data
+  available_dep_vars <- intersect(dep_vars, colnames(data))
+  if (length(available_dep_vars) == 0) {
+    warning("None of the specified dependent variables are present in the dataset.")
+    return(NULL)
+  }
+  
+  # Only keep complete observations for essential variables
+  data <- data %>% 
+    select(all_of(c("lei_code", required_columns, available_dep_vars))) %>%
+    na.omit()
+  
+  if (nrow(data) == 0) {
+    warning("No complete observations found after removing NA values.")
+    return(NULL)
+  }
+  
   # Step 1: Create instruments - average ESG scores by country-year, excluding focal bank
   # Extract country from lei_code if country column doesn't exist
   if (!"country" %in% colnames(data)) {
@@ -97,120 +129,114 @@ run_iv_analysis <- function(data,
   # Step 2: Run IV models for each dependent variable
   iv_results_list <- list()
   
-  for (dep_var in dep_vars) {
-    # Convert to panel data
-    panel_data <- pdata.frame(instruments_data, index = c("lei_code", "year"))
-    
-    # First stage - ESG score model
-    first_stage_esg <- try({
-      plm(esg_score ~ instr_esg_score + log_assets + equity_to_assets, 
-          data = panel_data, 
-          model = "within", 
-          effect = "twoways")
-    }, silent = TRUE)
-    
-    # Second stage - if first stage was successful
-    if (!inherits(first_stage_esg, "try-error") && !is.null(first_stage_esg)) {
+  for (dep_var in available_dep_vars) {
+    # Use tryCatch to handle potential errors for each dependent variable
+    tryCatch({
+      # Convert to panel data
+      panel_data <- pdata.frame(instruments_data, index = c("lei_code", "year"))
+      
+      # First stage - ESG score model
+      first_stage_esg <- plm(esg_score ~ instr_esg_score + log_assets + equity_to_assets, 
+                             data = panel_data, 
+                             model = "within", 
+                             effect = "twoways")
+      
       # Get predicted values from first stage
       panel_data$pred_esg_score <- fitted(first_stage_esg)
       
       # Second stage regression
-      second_stage_esg <- try({
-        plm(as.formula(paste0(dep_var, " ~ pred_esg_score + log_assets + equity_to_assets")),
-            data = panel_data,
-            model = "within",
-            effect = "twoways")
-      }, silent = TRUE)
+      second_stage_esg <- plm(as.formula(paste0(dep_var, " ~ pred_esg_score + log_assets + equity_to_assets")),
+                              data = panel_data,
+                              model = "within",
+                              effect = "twoways")
       
       # Store results
-      if (!inherits(second_stage_esg, "try-error") && !is.null(second_stage_esg)) {
-        iv_results_list[[dep_var]] <- list(
-          first_stage = first_stage_esg,
-          second_stage = second_stage_esg
-        )
-      }
-    }
-    
-    # First stage - ESG pillar scores
-    first_stage_env <- try({
-      plm(environmental_pillar_score ~ instr_environmental_pillar_score + log_assets + equity_to_assets,
-          data = panel_data, 
-          model = "within", 
-          effect = "twoways")
-    }, silent = TRUE)
-    
-    first_stage_soc <- try({
-      plm(social_pillar_score ~ instr_social_pillar_score + log_assets + equity_to_assets,
-          data = panel_data, 
-          model = "within", 
-          effect = "twoways")
-    }, silent = TRUE)
-    
-    first_stage_gov <- try({
-      plm(governance_pillar_score ~ instr_governance_pillar_score + log_assets + equity_to_assets,
-          data = panel_data, 
-          model = "within", 
-          effect = "twoways")
-    }, silent = TRUE)
-    
-    # Second stage - if all first stages were successful
-    if (!inherits(first_stage_env, "try-error") && !is.null(first_stage_env) &&
-        !inherits(first_stage_soc, "try-error") && !is.null(first_stage_soc) &&
-        !inherits(first_stage_gov, "try-error") && !is.null(first_stage_gov)) {
+      iv_results_list[[dep_var]] <- list(
+        first_stage = first_stage_esg,
+        second_stage = second_stage_esg
+      )
       
-      # Get predicted values from first stages
-      panel_data$pred_env_score <- fitted(first_stage_env)
-      panel_data$pred_soc_score <- fitted(first_stage_soc)
-      panel_data$pred_gov_score <- fitted(first_stage_gov)
-      
-      # Second stage regression
-      second_stage_pillars <- try({
-        plm(as.formula(paste0(dep_var, " ~ pred_env_score + pred_soc_score + pred_gov_score + log_assets + equity_to_assets")),
-            data = panel_data,
-            model = "within",
+      # First stage - ESG pillar scores (wrapped in tryCatch for each pillar)
+      first_stage_env <- tryCatch({
+        plm(environmental_pillar_score ~ instr_environmental_pillar_score + log_assets + equity_to_assets,
+            data = panel_data, 
+            model = "within", 
             effect = "twoways")
-      }, silent = TRUE)
+      }, error = function(e) NULL)
       
-      # Store results
-      if (!inherits(second_stage_pillars, "try-error") && !is.null(second_stage_pillars)) {
-        iv_results_list[[dep_var]]$first_stage_pillars <- list(
-          env = first_stage_env,
-          soc = first_stage_soc,
-          gov = first_stage_gov
-        )
-        iv_results_list[[dep_var]]$second_stage_pillars <- second_stage_pillars
+      first_stage_soc <- tryCatch({
+        plm(social_pillar_score ~ instr_social_pillar_score + log_assets + equity_to_assets,
+            data = panel_data, 
+            model = "within", 
+            effect = "twoways")
+      }, error = function(e) NULL)
+      
+      first_stage_gov <- tryCatch({
+        plm(governance_pillar_score ~ instr_governance_pillar_score + log_assets + equity_to_assets,
+            data = panel_data, 
+            model = "within", 
+            effect = "twoways")
+      }, error = function(e) NULL)
+      
+      # Only proceed with second stage for pillars if all first stages were successful
+      if (!is.null(first_stage_env) && !is.null(first_stage_soc) && !is.null(first_stage_gov)) {
+        # Get predicted values from first stages
+        panel_data$pred_env_score <- fitted(first_stage_env)
+        panel_data$pred_soc_score <- fitted(first_stage_soc)
+        panel_data$pred_gov_score <- fitted(first_stage_gov)
+        
+        # Second stage regression
+        second_stage_pillars <- tryCatch({
+          plm(as.formula(paste0(dep_var, " ~ pred_env_score + pred_soc_score + pred_gov_score + log_assets + equity_to_assets")),
+              data = panel_data,
+              model = "within",
+              effect = "twoways")
+        }, error = function(e) NULL)
+        
+        if (!is.null(second_stage_pillars)) {
+          # Store results
+          iv_results_list[[dep_var]]$first_stage_pillars <- list(
+            env = first_stage_env,
+            soc = first_stage_soc,
+            gov = first_stage_gov
+          )
+          iv_results_list[[dep_var]]$second_stage_pillars <- second_stage_pillars
+        }
       }
-    }
+    }, error = function(e) {
+      warning(paste("Error in IV analysis for", dep_var, ":", e$message))
+    })
   }
   
   # Step 3: Run regular fixed effects models for comparison
   fe_results_list <- list()
   
-  for (dep_var in dep_vars) {
-    # Convert to panel data
-    panel_data <- pdata.frame(data, index = c("lei_code", "year"))
-    
-    # ESG score model
-    fe_esg <- try({
-      plm(as.formula(paste0(dep_var, " ~ esg_score + log_assets + equity_to_assets")),
-          data = panel_data,
-          model = "within",
-          effect = "twoways")
-    }, silent = TRUE)
-    
-    # Pillar scores model
-    fe_pillars <- try({
-      plm(as.formula(paste0(dep_var, " ~ environmental_pillar_score + social_pillar_score + governance_pillar_score + log_assets + equity_to_assets")),
-          data = panel_data,
-          model = "within",
-          effect = "twoways")
-    }, silent = TRUE)
-    
-    # Store results
-    fe_results_list[[dep_var]] <- list(
-      fe_esg = if (!inherits(fe_esg, "try-error")) fe_esg else NULL,
-      fe_pillars = if (!inherits(fe_pillars, "try-error")) fe_pillars else NULL
-    )
+  for (dep_var in names(iv_results_list)) {
+    # Use tryCatch to handle potential errors for each dependent variable
+    tryCatch({
+      # Convert to panel data
+      panel_data <- pdata.frame(data, index = c("lei_code", "year"))
+      
+      # ESG score model
+      fe_esg <- plm(as.formula(paste0(dep_var, " ~ esg_score + log_assets + equity_to_assets")),
+                    data = panel_data,
+                    model = "within",
+                    effect = "twoways")
+      
+      # Pillar scores model
+      fe_pillars <- plm(as.formula(paste0(dep_var, " ~ environmental_pillar_score + social_pillar_score + governance_pillar_score + log_assets + equity_to_assets")),
+                        data = panel_data,
+                        model = "within",
+                        effect = "twoways")
+      
+      # Store results
+      fe_results_list[[dep_var]] <- list(
+        fe_esg = fe_esg,
+        fe_pillars = fe_pillars
+      )
+    }, error = function(e) {
+      warning(paste("Error in FE analysis for", dep_var, ":", e$message))
+    })
   }
   
   # Step 4: Create comparison tables between FE and IV results
@@ -242,9 +268,10 @@ run_iv_analysis <- function(data,
     "r.squared", "R²",            3
   )
   
-  for (dep_var in dep_vars) {
+  for (dep_var in names(iv_results_list)) {
     # Skip if either FE or IV model is missing
-    if (is.null(fe_results_list[[dep_var]]$fe_esg) || 
+    if (!dep_var %in% names(fe_results_list) || 
+        is.null(fe_results_list[[dep_var]]$fe_esg) || 
         is.null(iv_results_list[[dep_var]]$second_stage)) {
       next
     }
@@ -276,7 +303,8 @@ run_iv_analysis <- function(data,
                     font_size = 9)
     
     # Skip if either FE or IV pillar model is missing
-    if (is.null(fe_results_list[[dep_var]]$fe_pillars) || 
+    if (!dep_var %in% names(fe_results_list) || 
+        is.null(fe_results_list[[dep_var]]$fe_pillars) || 
         is.null(iv_results_list[[dep_var]]$second_stage_pillars)) {
       next
     }
@@ -311,7 +339,7 @@ run_iv_analysis <- function(data,
   # Step 5: Create first-stage regression summary tables to check instrument relevance
   first_stage_tables <- list()
   
-  for (dep_var in dep_vars) {
+  for (dep_var in names(iv_results_list)) {
     # Skip if missing first stage results
     if (is.null(iv_results_list[[dep_var]]$first_stage)) {
       next
@@ -362,9 +390,10 @@ run_iv_analysis <- function(data,
   # Create a summary table for all dependent variables
   summary_rows <- list()
   
-  for (dep_var in dep_vars) {
+  for (dep_var in names(iv_results_list)) {
     # Skip if either FE or IV model is missing
-    if (is.null(fe_results_list[[dep_var]]$fe_esg) || 
+    if (!dep_var %in% names(fe_results_list) || 
+        is.null(fe_results_list[[dep_var]]$fe_esg) || 
         is.null(iv_results_list[[dep_var]]$second_stage)) {
       next
     }
@@ -392,7 +421,13 @@ run_iv_analysis <- function(data,
                                    ifelse(iv_p < 0.1, "†", ""))))
     
     # Calculate F-statistic for first stage
-    f_stat <- summary(iv_results_list[[dep_var]]$first_stage)$fstatistic[1]
+    first_stage_summary <- summary(iv_results_list[[dep_var]]$first_stage)
+    f_stat <- NA
+    
+    # Safely extract F-statistic if it exists
+    if (!is.null(first_stage_summary$fstatistic) && length(first_stage_summary$fstatistic) > 0) {
+      f_stat <- first_stage_summary$fstatistic[1]
+    }
     
     # Add to summary rows
     summary_rows[[dep_var]] <- data.frame(
@@ -401,7 +436,7 @@ run_iv_analysis <- function(data,
       FE_SE = sprintf("(%.3f)", fe_se),
       IV_Coef = sprintf("%.3f%s", iv_coef, iv_sig),
       IV_SE = sprintf("(%.3f)", iv_se),
-      First_Stage_F = sprintf("%.2f", f_stat),
+      First_Stage_F = if (!is.na(f_stat)) sprintf("%.2f", f_stat) else "N/A",
       stringsAsFactors = FALSE
     )
   }
@@ -443,9 +478,10 @@ run_iv_analysis <- function(data,
     stringsAsFactors = FALSE
   )
   
-  for (dep_var in dep_vars) {
+  for (dep_var in names(iv_results_list)) {
     # Skip if either FE or IV model is missing
-    if (is.null(fe_results_list[[dep_var]]$fe_esg) || 
+    if (!dep_var %in% names(fe_results_list) || 
+        is.null(fe_results_list[[dep_var]]$fe_esg) || 
         is.null(iv_results_list[[dep_var]]$second_stage)) {
       next
     }
@@ -503,7 +539,7 @@ run_iv_analysis <- function(data,
   } else {
     # Create a placeholder plot if no data is available
     comparison_plot <- ggplot() + 
-      geom_text(aes(x = 0, y = 0, label = "No valid IV models could be estimated.")) +
+      annotate("text", x = 0, y = 0, label = "No valid IV models could be estimated.") +
       theme_minimal() +
       theme(
         axis.title = element_blank(),
@@ -522,19 +558,24 @@ run_iv_analysis <- function(data,
   
   for (dep_var in names(iv_results_list)) {
     if (!is.null(iv_results_list[[dep_var]]$first_stage)) {
-      f_stat <- summary(iv_results_list[[dep_var]]$first_stage)$fstatistic[1]
+      first_stage_summary <- summary(iv_results_list[[dep_var]]$first_stage)
       
-      f_stats <- rbind(f_stats, data.frame(
-        Risk_Measure = get_nice_dep_name(dep_var),
-        F_Statistic = f_stat,
-        stringsAsFactors = FALSE
-      ))
+      # Safely extract F-statistic if it exists
+      if (!is.null(first_stage_summary$fstatistic) && length(first_stage_summary$fstatistic) > 0) {
+        f_stat <- first_stage_summary$fstatistic[1]
+        
+        f_stats <- rbind(f_stats, data.frame(
+          Risk_Measure = get_nice_dep_name(dep_var),
+          F_Statistic = f_stat,
+          stringsAsFactors = FALSE
+        ))
+      }
     }
   }
   
   # Create F-statistic plot if we have data
   if (nrow(f_stats) > 0) {
-    f_stat_plot <- ggplot(f_stats, aes(x = Risk_Measure, y = F_Statistic)) +
+    iv_f_stat_plot <- ggplot(f_stats, aes(x = Risk_Measure, y = F_Statistic)) +
       geom_col(fill = "steelblue") +
       geom_hline(yintercept = 10, linetype = "dashed", color = "red") +
       geom_text(aes(y = F_Statistic + 1, label = sprintf("%.1f", F_Statistic)), 
@@ -551,8 +592,8 @@ run_iv_analysis <- function(data,
       )
   } else {
     # Create a placeholder plot if no data is available
-    f_stat_plot <- ggplot() + 
-      geom_text(aes(x = 0, y = 0, label = "No valid first-stage models available.")) +
+    iv_f_stat_plot <- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "No valid first-stage models available.") +
       theme_minimal() +
       theme(
         axis.title = element_blank(),
@@ -578,8 +619,8 @@ run_iv_analysis <- function(data,
         iv_coef <- viz_data$Coefficient[i]
         fe_coef <- viz_data$Coefficient[fe_row]
         
-        # Calculate percentage difference
-        if (fe_coef != 0) {
+        # Calculate percentage difference (safely handling zeros)
+        if (abs(fe_coef) > 0.00001) {  # Avoid division by near-zero
           pct_diff <- rbind(pct_diff, data.frame(
             Risk_Measure = viz_data$Risk_Measure[i],
             Pct_Difference = 100 * (iv_coef - fe_coef) / abs(fe_coef),
@@ -613,7 +654,7 @@ run_iv_analysis <- function(data,
   } else {
     # Create a placeholder plot if no data is available
     pct_diff_plot <- ggplot() + 
-      geom_text(aes(x = 0, y = 0, label = "No valid comparison data available.")) +
+      annotate("text", x = 0, y = 0, label = "No valid comparison data available.") +
       theme_minimal() +
       theme(
         axis.title = element_blank(),
@@ -631,6 +672,15 @@ run_iv_analysis <- function(data,
     stringsAsFactors = FALSE
   )
   
+  # If no valid data for Hausman test, create placeholder
+  if (nrow(hausman_results) == 0) {
+    hausman_results <- data.frame(
+      Risk_Measure = "All measures",
+      Comments = "Insufficient data for endogeneity assessment.",
+      stringsAsFactors = FALSE
+    )
+  }
+  
   # Create a nice kable table for Hausman test alternatives
   hausman_table <- kable(hausman_results,
                          col.names = c("Risk Measure", "Endogeneity Assessment"),
@@ -646,21 +696,21 @@ run_iv_analysis <- function(data,
   # Store important outputs in global variables
   iv_summary_table <<- all_risk_summary
   iv_comparison_plot <<- comparison_plot
-  iv_f_stat_plot <<- f_stat_plot
+  iv_f_stat_plot <<- iv_f_stat_plot
   iv_pct_diff_plot <<- pct_diff_plot
   iv_hausman_table <<- hausman_table
   
   # Store a representative pillar and first stage table for example
   if (length(comparison_tables) > 0) {
     pillar_key <- grep("_pillars$", names(comparison_tables), value = TRUE)[1]
-    if (!is.null(pillar_key)) {
+    if (length(pillar_key) > 0) {
       iv_pillar_table <<- comparison_tables[[pillar_key]]
     }
   }
   
   if (length(first_stage_tables) > 0) {
     fs_key <- grep("_esg$", names(first_stage_tables), value = TRUE)[1]
-    if (!is.null(fs_key)) {
+    if (length(fs_key) > 0) {
       iv_first_stage_table <<- first_stage_tables[[fs_key]]
     }
   }
@@ -670,26 +720,30 @@ run_iv_analysis <- function(data,
     dir.create("results", showWarnings = FALSE)
   }
   
-  # Save key tables and plots for the report
-  save_kable(all_risk_summary, "results/table_iv_summary.tex")
-  
-  # Save a representative pillar table
-  if (!is.null(iv_pillar_table)) {
-    save_kable(iv_pillar_table, "results/table_iv_pillars.tex")
-  }
-  
-  # Save a representative first stage table
-  if (!is.null(iv_first_stage_table)) {
-    save_kable(iv_first_stage_table, "results/table_first_stage.tex")
-  }
-  
-  # Save the Hausman test results
-  save_kable(hausman_table, "results/table_hausman_tests.tex")
-  
-  # Save plots
-  ggsave("results/plot_fe_iv_comparison.png", comparison_plot, width = 8, height = 6, dpi = 300)
-  ggsave("results/plot_f_statistics.png", f_stat_plot, width = 8, height = 5, dpi = 300)
-  ggsave("results/plot_pct_differences.png", pct_diff_plot, width = 8, height = 5, dpi = 300)
+  # Safe saving of outputs with tryCatch
+  tryCatch({
+    save_kable(all_risk_summary, "results/table_iv_summary.tex")
+    
+    # Save a representative pillar table
+    if (!is.null(iv_pillar_table)) {
+      save_kable(iv_pillar_table, "results/table_iv_pillars.tex")
+    }
+    
+    # Save a representative first stage table
+    if (!is.null(iv_first_stage_table)) {
+      save_kable(iv_first_stage_table, "results/table_first_stage.tex")
+    }
+    
+    # Save the Hausman test results
+    save_kable(hausman_table, "results/table_hausman_tests.tex")
+    
+    # Save plots
+    ggsave("results/plot_fe_iv_comparison.png", comparison_plot, width = 8, height = 6, dpi = 300)
+    ggsave("results/plot_f_statistics.png", f_stat_plot, width = 8, height = 5, dpi = 300)
+    ggsave("results/plot_pct_differences.png", pct_diff_plot, width = 8, height = 5, dpi = 300)
+  }, error = function(e) {
+    warning(paste("Error saving outputs:", e$message))
+  })
   
   # Return results
   return(list(
@@ -699,7 +753,7 @@ run_iv_analysis <- function(data,
     first_stage_tables = first_stage_tables,
     summary_table = all_risk_summary,
     comparison_plot = comparison_plot,
-    f_stat_plot = f_stat_plot,
+    f_stat_plot = iv_f_stat_plot,  # Changed from f_stat_plot
     pct_diff_plot = pct_diff_plot,
     hausman_table = hausman_table,
     viz_data = viz_data
@@ -722,7 +776,11 @@ get_nice_dep_name <- function(var_name) {
     "rwa_ratio" = "RWA Ratio"
   )
   
-  return(nice_names[var_name])
+  if (var_name %in% names(nice_names)) {
+    return(nice_names[var_name])
+  } else {
+    return(var_name)  # Return original if no nice name defined
+  }
 }
 
 # Run the analysis if required libraries are available
@@ -735,6 +793,115 @@ if (requireNamespace("plm", quietly = TRUE) &&
     dir.create("results", showWarnings = FALSE)
   }
   
-  # Run the IV analysis
-  iv_results <- run_iv_analysis(data_analysis)
+  # Run the IV analysis with robust error handling
+  tryCatch({
+    message("Starting IV analysis...")
+    iv_results <- run_iv_analysis(data_analysis)
+    message("IV analysis completed successfully.")
+  }, error = function(e) {
+    message("Error in IV analysis: ", e$message)
+    
+    # Create placeholder outputs for error cases
+    iv_summary_table <<- kable(data.frame(
+      Message = paste("IV analysis could not be completed:", e$message)
+    ), caption = "IV Analysis Error") %>%
+      kable_styling(latex_options = c("HOLD_position"),
+                    full_width = FALSE,
+                    font_size = 9)
+    
+    iv_comparison_plot <<- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "IV analysis could not be completed.") +
+      theme_void()
+    
+    iv_f_stat_plot <<- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "IV analysis could not be completed.") +
+      theme_void()
+    
+    iv_pct_diff_plot <<- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "IV analysis could not be completed.") +
+      theme_void()
+    
+    iv_hausman_table <<- kable(data.frame(
+      Message = "IV analysis could not be completed."
+    ), caption = "IV Analysis Error") %>%
+      kable_styling(latex_options = c("HOLD_position"),
+                    full_width = FALSE,
+                    font_size = 9)
+  })
+}
+
+# Add this function to your analysis_iv.R file or to your .Rmd file directly
+# This is a wrapper function that will create placeholder plots if the main analysis fails
+
+create_iv_visualizations <- function() {
+  # Check if the required objects exist
+  if (!exists("iv_summary_table", envir = .GlobalEnv)) {
+    iv_summary_table <<- kable(data.frame(
+      Message = "IV analysis results not available. Ensure the analysis_iv.R script runs successfully."
+    ), caption = "IV Analysis Results") %>%
+      kable_styling(latex_options = c("HOLD_position"),
+                    full_width = FALSE,
+                    font_size = 9)
+  }
+  
+  # Create placeholder for F-statistics plot if it doesn't exist
+  if (!exists("iv_f_stat_plot", envir = .GlobalEnv)) {
+    iv_f_stat_plot <<- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "F-statistic plot not available") +
+      theme_void() +
+      theme(panel.border = element_rect(color = "gray", fill = NA))
+  }
+  
+  # Create placeholder for comparison plot if it doesn't exist
+  if (!exists("iv_comparison_plot", envir = .GlobalEnv)) {
+    iv_comparison_plot <<- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "Coefficient comparison plot not available") +
+      theme_void() +
+      theme(panel.border = element_rect(color = "gray", fill = NA))
+  }
+  
+  # Create placeholder for percentage difference plot if it doesn't exist
+  if (!exists("iv_pct_diff_plot", envir = .GlobalEnv)) {
+    iv_pct_diff_plot <<- ggplot() + 
+      annotate("text", x = 0, y = 0, label = "Percentage difference plot not available") +
+      theme_void() +
+      theme(panel.border = element_rect(color = "gray", fill = NA))
+  }
+  
+  # Create placeholder for Hausman table if it doesn't exist
+  if (!exists("iv_hausman_table", envir = .GlobalEnv)) {
+    iv_hausman_table <<- kable(data.frame(
+      Risk_Measure = "All measures",
+      Comments = "Hausman test results not available."
+    ), caption = "Notes on Endogeneity") %>%
+      kable_styling(latex_options = c("HOLD_position"),
+                    full_width = FALSE,
+                    font_size = 9)
+  }
+  
+  # Create placeholder for first stage table if it doesn't exist
+  if (!exists("iv_first_stage_table", envir = .GlobalEnv)) {
+    iv_first_stage_table <<- kable(data.frame(
+      Variable = c("Instrument", "Log Assets", "Equity to Assets"),
+      Coefficient = c("N/A", "N/A", "N/A")
+    ), caption = "First Stage Results") %>%
+      kable_styling(latex_options = c("HOLD_position"),
+                    full_width = FALSE,
+                    font_size = 9)
+  }
+  
+  # Create placeholder for pillar table if it doesn't exist
+  if (!exists("iv_pillar_table", envir = .GlobalEnv)) {
+    iv_pillar_table <<- kable(data.frame(
+      Variable = c("Environmental Score", "Social Score", "Governance Score"),
+      FE = c("N/A", "N/A", "N/A"),
+      IV = c("N/A", "N/A", "N/A")
+    ), caption = "ESG Pillar Effects") %>%
+      kable_styling(latex_options = c("HOLD_position"),
+                    full_width = FALSE,
+                    font_size = 9)
+  }
+  
+  # Return TRUE to indicate completion
+  return(TRUE)
 }
