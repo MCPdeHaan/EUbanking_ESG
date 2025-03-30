@@ -23,11 +23,6 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FA
 ```
 
 ```{r}
-library(knitr)
-library(kableExtra)
-```
-
-```{r}
 # Load required libraries
 library(plm)
 library(dplyr)
@@ -50,7 +45,8 @@ library(ggplot2)
 library(patchwork)
 library(modelsummary) # Already used in your example
 library(broom)        # Already used in your example
-
+library(knitr)
+library(kableExtra)
 
 sink(file = tempfile())
 invisible(source(here::here("R", "import_ESG.R")))
@@ -82,7 +78,6 @@ sink()
 | **Signature**
 | |
 
-
 \newpage 
 
 \tableofcontents
@@ -90,6 +85,7 @@ sink()
 \newpage
 
 # Introduction
+
 In recent years, the role of environmental, social, and governance (ESG)  considerations in banking has gained significant attention in both academic and policy fields. Growing concerns about climate change, inequality and good governance have increased the interest how corporations and banks through their lending decision can drive the transition to a more sustainable and equitable economy (Carnevale & Drago, 2024; European Banking Authority, 2018; EU, 2014). Many banks across Europe are subject to Pillar 3 disclosures under the Capital Requirements Regulation (CRR), and new ESG disclosures further highlight climate and sustainability exposures (De Barros Fritz & Gentile, 2024). Policymakers and financial experts argue that improved ESG performance may help banks reduce their overall risk exposure, particularly by enhancing their reputation, improving stakeholder trust, and anticipating regulatory changes. However, whether ESG practices truly mitigate banking risk or whether lower-risk institutions merely find it easier to allocate resources toward socially responsible projects remains an open empirical question. This paper contributes to this debate by focusing on capital adequacy which reflects banking risk and using regulatory data instead of annual reports. In this paper, the relationship between ESG performance and capital ratios for European banks from 2020 to 2023 is analysed.
 
 From a societal perspective, understanding whether strong ESG engagement leads to more resilient financial institutions carries high relevance. If banks with robust ESG strategies exhibit lower risk, this supports integrating ESG considerations into prudential regulation and highlights banks’ capacity to contribute to broader societal objectives without jeopardizing their stability. Conversely, if safer banks are simply better able to “afford” ESG investments, this suggests a different policy focus (e.g. financial health determines ESG commitments needed to be made). From a scientific standpoint, this study adds nuance to a growing literature that often uses conventional balance-sheet data to proxy risk, which may not fully capture regulatory metrics. By leveraging publicly available data from the European Banking Authority (EBA) , we gain a more reliable view of risk-weighted assets, Tier 1 capital, leverage, and provision levels. Pairing these risk metrics with granular ESG data from LSEG Refinitiv further strengthens the empirical inquiry, because the ESG scores (and their component pillars) benefit from refined post-2019 methodologies.
@@ -337,9 +333,29 @@ In the quantile regression framework, I use bootstrap methods (Koenker and Hallo
 
 This comprehensive methodological approach, combining fixed effects, non-linear specifications, quantile regression, PCA, and IV estimation, allows for a robust examination of the relationship between ESG performance and banking risk, addressing multiple econometric challenges highlighted in the literature. By implementing these complementary methodologies, I aim to provide a nuanced understanding of how different aspects of ESG performance relate to various banking risk measures across the risk distribution.
 
-
-
 # Results
+
+This section presents the main results from the empirical analyses, focusing on the relationship between ESG performance and banking risk measures. I It first present the findings from the fixed effects panel models, examining the impact of overall ESG scores and individual ESG pillars on risk-weighted capital ratios, leverage ratios, provisions, and liquidity ratios. I then discuss the results from the quantile regression analysis, highlighting how ESG factors affect banks with different risk profiles. Finally, I present the outcomes of the PCA analysis, illustrating how principal components of ESG performance relate to banking risk metrics.
+
+## Fixed Effects Panel Models
+
+### Overall ESG Score Effects
+
+Table \@ref(fig:time-trends) presents the results of the two-way fixed effects models examining the relationship between banks' overall ESG scores and various risk measures. These models control for both time-invariant bank characteristics and common time trends, addressing concerns about unobserved heterogeneity as outlined in the methodology.
+
+The results reveal several notable patterns. First, the coefficient of the overall ESG score on CET1 risk exposure is 0.000, with a standard error of 0.005, indicating no statistically significant linear relationship between overall ESG performance and this fundamental capital adequacy measure. Similar patterns emerge for tier1_risk_exposure (coefficient = 0.005, SE = 0.006) and totalcap_risk_exposure (coefficient = 0.006, SE = 0.006), neither of which reaches conventional significance levels. These findings suggest that the direct linear impact of overall ESG scores on regulatory capital ratios is minimal in the European banking sector during the 2020-2023 period.
+For leverage_ratio, the ESG score coefficient is negative (-0.001) but statistically insignificant, while the provisions variable shows a large positive coefficient (116.065) with a substantial standard error (182.282), again failing to reach statistical significance. The provisions_ratio shows a positive but insignificant relationship (coefficient = 0.003, SE = 0.004). The liquidity_ratio and rwa_ratio both show negative relationships with ESG scores (-0.003 and -0.005 respectively), though neither reaches statistical significance.
+The quadratic terms (ESG Score²) are consistently close to zero across all risk measures, with none showing statistical significance. This suggests an absence of strong non-linear relationships between overall ESG performance and risk metrics in the sample. The lack of significance in both linear and quadratic terms indicates that the relationship between aggregate ESG scores and risk measures may be more complex than can be captured by these specifications alone, or that heterogeneity in the sample is masking potential effects.
+
+Regarding control variables, bank size (Log Assets) shows consistently strong and statistically significant associations with risk measures. The positive coefficients for CET1, tier1, and total capital risk exposures (0.194***, 0.185***, and 0.238*** respectively) indicate that larger banks tend to maintain higher regulatory capital ratios, potentially reflecting their systemic importance and corresponding regulatory expectations. The equity-to-assets ratio similarly demonstrates strong positive associations with most risk measures, particularly with capital adequacy metrics (coefficients ranging from 1.327** to 4.727***), confirming the mechanical relationship between equity capital and regulatory risk measures.
+
+The R² values, ranging from 0.142 (liquidity_ratio) to 0.487 (totalcap_risk_exposure), indicate moderate explanatory power for these models. The relatively higher R² for capital-related risk measures suggests that the included variables capture capital adequacy determinants more effectively than liquidity or provision factors.
+
+## Quantile Regression Analysis
+
+## Principal Component Analysis
+
+
 
 
 # Conclusion
@@ -350,7 +366,6 @@ This comprehensive methodological approach, combining fixed effects, non-linear 
 
 ## Tables
 
-```{r variables-table, echo=FALSE}
 ```{r variables-table, echo=FALSE}
 source("variables_df.R")
 kable(variables_df, 
@@ -364,12 +379,14 @@ kable(variables_df,
   column_spec(3, width = "1in")
 ```
 
-```{r}
-# Display the tables
+```{r esg-table}
 ms_esg_table
-ms_pillar_table
 ```
 
+
+```{r pillar-table}
+ms_pillar_table
+```
 
 ```{r}
 # Run the quantile regression analysis
@@ -381,73 +398,50 @@ results <- run_simplified_esg_analysis(
 )
 ```
 
-```{r}
+```{r quantile-ESG}
 results$plots$combined$esg
 ```
 
 \newpage
 
-```{r}
+```{r quantile-environmental}
 results$plots$combined$environmental
 ```
 
-```{r}
+```{r qunatile-social}
 results$plots$combined$social
 ```
 
 \newpage
 
-```{r}
+```{r quantile-governance}
 results$plots$combined$governance
 ```
 
 ```{r}
-# Create summary tables
 summary_data <- get_raw_summary_tables(
   results$coefficients$esg, 
   results$coefficients$pillars
 )
+```
 
-# Display summary tables
+```{r quantile-esg-table}
 make_simple_esg_summary_table(summary_data)
-make_simple_pillar_summary_table(summary_data)
+```
 
-# Create detailed tables for specific variables
+```{r quantile-pillar-table}
+make_simple_pillar_summary_table(summary_data)
+```
+
+```{r cet1-quantile-esg}
 make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
+```
+
+```{r leverage-quantile-esg}
 make_pillar_table(results$coefficients$pillars, "leverage_ratio")
 ```
 
-```{r}
-# Run the PCA analysis
-pca_results <- run_pca_esg_analysis(
-  data = data_analysis,  
-  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
-               "totalcap_risk_exposure", "leverage_ratio", "provisions", 
-               "provisions_ratio", "liquidity_ratio", "rwa_ratio"),
-  variance_threshold = 0.8
-)
-
-# Display visualizations in the report
-pca_results$visualizations$scree_plot
-```
-
-\newpage
-
-```{r}
-pca_results$visualizations$loading_plot
-pca_results$visualizations$pc_interpretation
-pca_results$visualizations$pc_model_table
-pca_results$visualizations$comparison_table
-```
-
-
-```{r iv-analysis-setup, include=FALSE}
-# Source the IV analysis script
-invisible(source(here::here("R", "analysis_iv.R")))
-```
-
-# Instrumental Variable Analysis
-
+## IV
 
 ```{r iv-display, fig.height=5, fig.width=8, results='hide'}
 # Run the IV analysis on your dataset
@@ -472,7 +466,40 @@ grid.arrange(
 )
 ```
 
-```{r}
+```{r comparison-fe-iv}
 iv_pillar_table
 ```
 
+## PCA
+
+```{r}
+pca_results <- run_pca_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "totalcap_risk_exposure", "leverage_ratio", "provisions", 
+               "provisions_ratio", "liquidity_ratio", "rwa_ratio"),
+  variance_threshold = 0.8
+)
+```
+
+```{r pca-results}
+pca_results$visualizations$scree_plot
+```
+
+\newpage
+
+```{r pca-loading-plot}
+pca_results$visualizations$loading_plot
+```
+
+```{r pca-interpretation}
+pca_results$visualizations$pc_interpretation
+```
+
+```{r pca-table}
+pca_results$visualizations$pc_model_table
+```
+
+```{r pca-comparison-table}
+pca_results$visualizations$comparison_table
+```
