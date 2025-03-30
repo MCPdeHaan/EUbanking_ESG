@@ -179,7 +179,14 @@ print(summary_table)
 
 ## Correlations
 
-Table \@ref(tab:correlation-matrix) shows the Pearson correlation coefficients among the main variables. >>
+Table \@ref(tab:correlation-matrix) displays the correlation patterns among key variables, revealing several notable relationships. The overall ESG score exhibits strong positive correlations with the social (0.83) and governance (0.85) pillars, and a moderate correlation with the environmental pillar (0.62). This suggests that while all three dimensions contribute to overall ESG ratings, governance and social factors may carry somewhat greater weight in determining overall ESG performance in European banks.
+
+Interestingly, ESG scores show negative correlations with risk metrics: specifically, -0.25 with CET1 risk exposure. This negative relationship, though modest, aligns with the hypothesis that stronger ESG performance may be associated with lower risk levels. However, the direction of causality cannot be inferred from these correlations alone.
+
+The three ESG pillars show different patterns of association with risk metrics. The environmental pillar correlates negatively (-0.11) with CET1 risk exposure, while the social pillar shows a stronger negative relationship (-0.35). Governance displays the weakest correlation with CET1 risk (-0.12). These varying relationships underscore the importance of examining ESG components separately rather than relying solely on aggregate scores.
+Bank size (log assets) demonstrates positive correlations with ESG score (0.50) and environmental pillar score (0.58), suggesting that larger banks tend to have stronger overall ESG performance, particularly in environmental areas. This pattern might reflect larger institutions' greater resources for sustainability initiatives or their enhanced regulatory scrutiny and reporting requirements.
+
+The leverage ratio exhibits strong positive correlations with equity-to-assets (0.87) and RWA ratio (0.86), confirming the interconnected nature of these capital adequacy measures. Notably, the leverage ratio shows a negative correlation with log assets (-0.45), indicating that larger banks tend to operate with relatively lower leverage ratios.
 
 ```{r correlation-matrix, echo=FALSE, results='asis', fig.cap="Correlation Matrix."}
 # Define variables for the correlation matrix (can be a subset for readability)
@@ -197,7 +204,15 @@ print(correlation_table)
 
 ## Variable Distributions
 
-Figure \@ref(fig:distributions) illustrates the distributions of selected key variables. >> 
+Figure \@ref(fig:distributions) illustrates the distributions of five key variables. The ESG score distribution appears approximately normal with a slight left skew, showing a concentration of values between 70 and 85. This clustering suggests a convergence toward relatively high ESG performance among European banks, though the left tail indicates a subset of institutions with substantially lower scores.
+
+The CET1 risk exposure distribution exhibits a more symmetrical bell shape centered around 0.6, with most values falling between 0.5 and 0.7. This relative uniformity likely reflects the regulatory framework's influence, as banks must maintain minimum capital requirements while facing competitive and shareholder pressures that discourage excessive capital holdings.
+
+The leverage ratio distribution shows right skew, with most observations concentrated between 0.15 and 0.25, and a longer tail extending toward higher values. This pattern indicates that while most banks maintain similar leverage levels, some institutions operate with significantly higher ratios, potentially reflecting different business models or risk appetites.
+
+Log assets display a bimodal distribution, with peaks around 12.5 and 14.5, suggesting two distinct size clusters in our sample—medium-sized banks and larger institutions. This bimodality is important to consider in subsequent analyses, as size may moderate the relationship between ESG performance and risk metrics.
+
+The equity-to-assets ratio distribution is right-skewed with most values concentrated between 0.04 and 0.08. The clustering at relatively low values is consistent with banking industry norms, where thin equity margins are typical. The right tail represents banks operating with more conservative capital structures.
 
 ```{r distributions, echo=FALSE, fig.cap="Distributions of Key Variables."}
 # Define variables for distribution plots
@@ -213,7 +228,12 @@ print(distribution_plot)
 
 ## Time Trends
 
-Figure \@ref(fig:time-trends) shows the mean values of selected variables across the years 2020--2023. >>
+Figure \@ref(fig:time-trends) depicts the evolution of four key variables from 2020 to 2023, revealing important temporal patterns. The ESG score shows an overall positive trajectory, rising from approximately 73.1 in 2020 to 73.9 in 2023, with a temporary decline to 72.5 in 2021. This pattern suggests that despite potential pandemic-related setbacks in 2021, European banks have generally strengthened their sustainability practices over the observed period.
+CET1 risk exposure displays a contrasting trend, declining from 0.67 in 2020 to approximately 0.60 in 2021-2022, before increasing slightly to 0.61 in 2023. This initial decrease might reflect regulatory flexibility during the pandemic or strategic shifts in banks' risk-weighted asset compositions. The subsequent stabilization and slight uptick suggest a potential return to pre-pandemic risk levels.
+The leverage ratio exhibits more volatility, increasing from 0.21 in 2020 to 0.24 in 2021, declining to 0.23 in 2022, then rising again to 0.24 in 2023. This fluctuation may reflect banks' adaptive responses to changing economic conditions and regulatory expectations throughout the post-pandemic recovery period.
+Liquidity ratio shows the most dramatic shift, rising sharply from 0.12 in 2020 to approximately 0.16 in 2021-2022, before declining to 0.14 in 2023. The initial increase likely represents a prudential response to pandemic-induced uncertainty, with banks building liquidity buffers. The subsequent decline might indicate a gradual return to more normalized liquidity management as economic conditions stabilized.
+
+Collectively, these temporal trends reveal a complex adaptive landscape where banks have generally improved their ESG performance while navigating significant macroeconomic challenges that affected their risk and capital metrics. The non-uniform patterns across different variables highlight the multifaceted nature of banks' strategic responses to changing regulatory, economic, and sustainability pressures during this period.
 
 ```{r time-trends, echo=FALSE, fig.cap="Average Trends Over Time."}
 # Define variables for time trend plots
@@ -225,10 +245,6 @@ time_trend_plot <- generate_time_trend_plots(data_analysis, trend_vars)
 # Print the plot
 print(time_trend_plot)
 ```
-
-  
-
-
 
 
 # Methodology
