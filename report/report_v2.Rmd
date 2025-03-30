@@ -43,6 +43,7 @@ library(gridExtra)
 library(kableExtra)
 library(modelsummary)
 
+sink(file = tempfile())
 invisible(source(here::here("R", "import_ESG.R")))
 invisible(source(here::here("R", "import_financial.R")))
 invisible(source(here::here("R", "merging_ESG_financial.R")))
@@ -51,6 +52,7 @@ invisible(source(here::here("R", "analysis_quantile.R")))
 invisible(source(here::here("R", "analysis_pca.R")))
 invisible(source(here::here("R", "analysis_iv.R")))
 invisible(source(here::here("R", "analysis_exp.R")))
+sink()
 ```
 
 # Abstract {.unnumbered}
@@ -137,53 +139,76 @@ The merged dataset was constructed by performing an inner join between the regul
 # Descriptive Analyses
 
 ```{r}
-# Run exploratory analysis
+# Run exploratory analysis with the fixed functions
 exploratory_results <- run_exploratory_analysis(data_analysis)
-
-# Create formatted report
+# Create formatted report with proper table formatting
 exploratory_report <- create_exploratory_report(exploratory_results)
 ```
 
-## Exploratory Analysis
 
-```{r exploratory-data-overview}
-# Display data overview
-exploratory_report$data_coverage
+```{r summary-statistics-table, results='asis'}
+if(!is.null(exploratory_report$summary_statistics)) {
+  cat(exploratory_report$summary_statistics)
+}
 ```
 
-```{r exploratory-country-composition}
-# Display country composition
-exploratory_report$country_composition
+```{r exploratory-data-overview, results='asis'}
+if(!is.null(exploratory_report$data_coverage)) {
+  cat(exploratory_report$data_coverage)
+}
 ```
 
-```{r exploratory-summary-stats}
-# Display summary statistics
-exploratory_report$summary_statistics
+```{r exploratory-country-composition, results='asis'}
+if(!is.null(exploratory_report$country_composition)) {
+  cat(exploratory_report$country_composition)
+}
 ```
 
-```{r exploratory-yearly-esg}
-# Display yearly ESG trends
-exploratory_report$yearly_esg
+```{r exploratory-yearly-esg, results='asis'}
+if(!is.null(exploratory_report$yearly_esg)) {
+  cat(exploratory_report$yearly_esg)
+}
 ```
 
-```{r exploratory-esg-by-size, fig.height=7, fig.width=9}
-# Display ESG by size if available
+```{r exploratory-esg-by-size, results='asis'}
 if(!is.null(exploratory_report$esg_by_size)) {
-  exploratory_report$esg_by_size
+  cat(exploratory_report$esg_by_size)
 }
 ```
 
-```{r exploratory-esg-dist, fig.height=5, fig.width=10}
-# Display ESG distribution plot
-if(!is.null(exploratory_report$esg_dist_plot)) {
-  exploratory_report$esg_dist_plot
+```{r, results='asis'}
+cat("\\newpage")
+```
+
+```{r exploratory-esg-hist, fig.height=5, fig.width=10}
+# Display ESG histogram plot
+if(!is.null(exploratory_results$esg_hist)) {
+  exploratory_results$esg_hist
 }
 ```
 
-```{r exploratory-trends, fig.height=5, fig.width=10}
-# Display ESG trends
-if(!is.null(exploratory_report$esg_trends_plot)) {
-  exploratory_report$esg_trends_plot
+```{r exploratory-pillar-boxplot, fig.height=5, fig.width=10}
+# Display ESG pillar boxplot
+if(!is.null(exploratory_results$pillar_boxplot)) {
+  exploratory_results$pillar_boxplot
+}
+```
+
+```{r, results='asis'}
+cat("\\newpage")
+```
+
+```{r exploratory-esg-trend, fig.height=5, fig.width=10}
+# Display ESG trend plot
+if(!is.null(exploratory_results$esg_trend_plot)) {
+  exploratory_results$esg_trend_plot
+}
+```
+
+```{r exploratory-pillar-trend, fig.height=5, fig.width=10}
+# Display ESG pillar trends
+if(!is.null(exploratory_results$pillar_trend_plot)) {
+  exploratory_results$pillar_trend_plot
 }
 ```
 
@@ -208,30 +233,6 @@ if(!is.null(exploratory_report$esg_cet1_plot)) {
 }
 ```
 
-```{r exploratory-pillar-plots, fig.height=4, fig.width=10}
-# Display pillar vs leverage plots
-if(!is.null(exploratory_report$pillar_leverage_plots)) {
-  exploratory_report$pillar_leverage_plots
-}
-```
-
-```{r exploratory-change-analysis}
-# Display change analysis
-if(!is.null(exploratory_report$change_analysis)) {
-  exploratory_report$change_analysis
-}
-```
-
-```{r exploratory-change-plots, fig.height=8, fig.width=10}
-# Display change plots
-if(!is.null(exploratory_report$esg_change_plot) && !is.null(exploratory_report$risk_esg_change_plot)) {
-  grid.arrange(
-    exploratory_report$esg_change_plot,
-    exploratory_report$risk_esg_change_plot,
-    ncol = 1
-  )
-}
-```
 
 # Methodology
 
@@ -248,12 +249,13 @@ if(!is.null(exploratory_report$esg_change_plot) && !is.null(exploratory_report$r
 ## Tables
 
 ```{r variables-table, echo=FALSE}
+```{r variables-table, echo=FALSE}
 source("variables_df.R")
 kable(variables_df, 
       caption = "Overview of variables", 
       booktabs = TRUE,
       longtable = TRUE) %>%
-  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"),
+  kable_styling(latex_options = c("striped", "repeat_header", "hold_position"),
                 font_size = 9) %>%
   column_spec(1, bold = TRUE, width = "2.5in") %>%
   column_spec(2, width = "2.5in") %>%
