@@ -249,6 +249,95 @@ print(time_trend_plot)
 
 # Methodology
 
+This section presents the empirical approach used to examine the relationship between ESG performance and banking risk. I employ several complementary methodologies to address potential issues of unobserved heterogeneity, non-linearity, and endogeneity, providing a comprehensive analysis of how ESG factors relate to various banking risk measures.
+
+## Fixed Effects Panel Models
+
+The primary analytical framework consists of panel data models with two-way fixed effects. This approach controls for both time-invariant bank characteristics and common time trends, addressing concerns about unobserved heterogeneity highlighted in previous banking studies (Gehrig et al., 2023; Palmieri et al., 2023). The baseline specification for the overall ESG score is:
+
+$$Y_{i,t} = \beta_0 + \beta_1 \text{ESG}_{i,t} + \boldsymbol{\beta_2} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+where $Y_{i,t}$ represents the risk measure for bank $i$ in year $t$ (e.g., CET1 risk exposure, Tier 1 risk exposure, leverage ratio); $\text{ESG}_{i,t}$ denotes the overall ESG score; $\mathbf{X}_{i,t}$ is a vector of control variables including the natural logarithm of total assets and the equity-to-assets ratio; $\alpha_i$ are bank fixed effects capturing time-invariant bank characteristics; $\lambda_t$ are year fixed effects accounting for common time trends; and $\varepsilon_{i,t}$ is the error term.
+
+For a more granular analysis of ESG components, I also estimate models using the three pillar scores separately:
+
+$$Y_{i,t} = \beta_0 + \beta_1 \text{ENV}_{i,t} + \beta_2 \text{SOC}_{i,t} + \beta_3 \text{GOV}_{i,t} + \boldsymbol{\beta_4} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+where $\text{ENV}_{i,t}$, $\text{SOC}_{i,t}$, and $\text{GOV}_{i,t}$ represent the environmental, social, and governance pillar scores, respectively.
+
+This differentiated approach follows Bannier et al. (2021) and Palmieri et al. (2023a), who demonstrated that individual ESG components may influence risk metrics differently. The fixed effects specification helps mitigate omitted variable bias from time-invariant factors, a crucial concern noted by Carnevale and Drago (2024) in ESG-banking research.
+
+## Non-linear Relationships and Dynamic Specifications
+
+To account for potential non-linear relationships between ESG performance and risk measures, as suggested by Barth et al. (2022) and Ersoy et al. (2022), I extend the baseline model to include quadratic terms:
+
+$$Y_{i,t} = \beta_0 + \beta_1 \text{ESG}_{i,t} + \beta_2 \text{ESG}_{i,t}^2 + \beta_3 Y_{i,t-1} + \boldsymbol{\beta_4} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+where $\text{ESG}_{i,t}^2$ is the squared term of the ESG score and $Y_{i,t-1}$ represents a lagged dependent variable to account for potential persistence in risk measures. A similar quadratic specification is applied to the pillar-level model:
+
+$$Y_{i,t} = \beta_0 + \beta_1 \text{ENV}_{i,t} + \beta_2 \text{ENV}_{i,t}^2 + \beta_3 \text{SOC}_{i,t} + \beta_4 \text{SOC}_{i,t}^2 + \beta_5 \text{GOV}_{i,t} + \beta_6 \text{GOV}_{i,t}^2 + \beta_7 Y_{i,t-1} + \boldsymbol{\beta_8} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+The inclusion of lagged dependent variables addresses potential dynamics in the relationship between ESG performance and risk, as banks may adjust their risk profiles gradually in response to changes in ESG factors. This dynamic specification aligns with approaches used by Danisman and Tarazi (2023) and Gehrig et al. (2023) in similar contexts.
+
+## Quantile Regression Analysis
+
+To examine potential heterogeneous effects of ESG factors across different levels of banking risk, I employ quantile regression analysis, following methodological precedents in banking literature such as Curcio et al. (2023) and Izcan and Bektas (2022). Unlike standard OLS or fixed effects models that focus on the conditional mean, quantile regressions estimate the relationship at different points in the conditional distribution of the dependent variable:
+
+$$Q_{Y_{i,t}}(\tau|\text{ESG}_{i,t}, \mathbf{X}_{i,t}) = \beta_0(\tau) + \beta_1(\tau) \text{ESG}_{i,t} + \boldsymbol{\beta_2}(\tau) \mathbf{X}_{i,t}$$
+
+where $Q_{Y_{i,t}}(\tau|\text{ESG}_{i,t}, \mathbf{X}_{i,t})$ denotes the $\tau$-th conditional quantile of the risk measure $Y_{i,t}$, and $\beta_j(\tau)$ are the coefficients that may vary across quantiles. I estimate this model for five quantiles ($\tau = 0.1, 0.25, 0.5, 0.75, 0.9$), providing insights into how ESG scores affect banks with different risk profiles. This approach is valuable for regulatory purposes, as it helps identify whether ESG factors have stronger implications for higher-risk institutions.
+
+For pillar-specific effects, I estimate:
+
+$$Q_{Y_{i,t}}(\tau|\text{ENV}_{i,t}, \text{SOC}_{i,t}, \text{GOV}_{i,t}, \mathbf{X}_{i,t}) = \beta_0(\tau) + \beta_1(\tau) \text{ENV}_{i,t} + \beta_2(\tau) \text{SOC}_{i,t} + \beta_3(\tau) \text{GOV}_{i,t} + \boldsymbol{\beta_4}(\tau) \mathbf{X}_{i,t}$$
+
+This allows for examining whether specific ESG components have differential impacts across the risk distribution, a nuance that means-based approaches might obscure.
+
+## Principal Component Analysis
+
+To address the high dimensionality and potential multicollinearity among ESG components, I employ Principal Component Analysis (PCA), a dimensionality reduction technique. This approach is particularly valuable given the detailed ESG component data available in the Refinitiv database, which includes numerous subcategories beyond the three main pillars.
+
+PCA transforms the original ESG variables into a set of orthogonal principal components that capture the maximum variance in the data:
+
+$$PC_j = \sum_{k=1}^p a_{jk} Z_k$$
+
+where $PC_j$ is the $j$-th principal component, $Z_k$ represents the standardized $k$-th ESG variable, and $a_{jk}$ are the component loadings. I retain enough components to explain approximately 80% of the total variance, with a maximum of five components to maintain interpretability.
+
+These principal components are then used as regressors in the fixed effects model:
+
+$$Y_{i,t} = \beta_0 + \sum_{j=1}^m \beta_j PC_{j,i,t} + \boldsymbol{\beta_{m+1}} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+where $m$ is the number of retained principal components. This PCA approach follows methodological insights from Goss and Roberts (2010), who applied similar techniques to reduce dimensionality in KLD social responsibility data. It allows for capturing the underlying structure of ESG performance while avoiding collinearity issues that might arise when including multiple correlated ESG components simultaneously.
+
+## Instrumental Variable Approach
+
+To address potential endogeneity concerns arising from reverse causality or omitted variables, I implement an instrumental variable (IV) approach. Following strategies employed by Danisman and Tarazi (2023) and Gehrig et al. (2023), I construct instruments based on leave-one-out country-year averages of ESG scores:
+
+$$\text{Instr\_ESG}_{i,c,t} = \frac{\sum_{j \in c, j \neq i} \text{ESG}_{j,t}}{\sum_{j \in c, j \neq i} 1}$$
+
+where $\text{Instr\_ESG}_{i,c,t}$ is the instrument for bank $i$ in country $c$ in year $t$, calculated as the average ESG score of all other banks in the same country and year. This instrument leverages the idea that a bank's ESG performance is influenced by country-level norms and regulations (Ioannou and Serafeim, 2012), but should not directly affect that specific bank's risk measures except through its impact on the bank's own ESG performance.
+
+The IV estimation is implemented using a two-stage approach:
+
+First stage:
+$$\text{ESG}_{i,t} = \gamma_0 + \gamma_1 \text{Instr\_ESG}_{i,c,t} + \boldsymbol{\gamma_2} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \nu_{i,t}$$
+
+Second stage:
+$$Y_{i,t} = \beta_0 + \beta_1 \widehat{\text{ESG}}_{i,t} + \boldsymbol{\beta_2} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+where $\widehat{\text{ESG}}_{i,t}$ represents the predicted values from the first stage. Similar instruments are constructed for each pillar score in the pillar-specific IV models. This approach helps isolate the causal effect of ESG performance on banking risk, addressing concerns raised by Bouslah et al. (2013) and Cornett et al. (2016) about the direction of causality between ESG and financial outcomes.
+
+## Robustness and Specification Tests
+
+For each model, I conduct a series of robustness and specification tests to ensure the validity of the results. For the fixed effects models, I implement Hausman tests to confirm the appropriateness of fixed versus random effects specifications. I also employ Driscoll-Kraay standard errors to address potential cross-sectional dependence, a common concern in panel data with financial institutions, as highlighted by Curcio et al. (2024).
+
+For the IV estimations, I evaluate instrument strength using first-stage F-statistics, with values above 10 generally indicating sufficiently strong instruments (Staiger and Stock, 1997). While formal Hausman tests for endogeneity are limited by data constraints, I examine the differences between fixed effects and IV estimates to assess the potential magnitude of endogeneity bias.
+
+In the quantile regression framework, I use bootstrap methods (Koenker and Hallock, 2001) to compute standard errors robust to heteroskedasticity. For PCA, I examine loading patterns and variance explained to ensure that the retained components adequately capture the underlying ESG dimensions.
+
+This comprehensive methodological approach, combining fixed effects, non-linear specifications, quantile regression, PCA, and IV estimation, allows for a robust examination of the relationship between ESG performance and banking risk, addressing multiple econometric challenges highlighted in the literature. By implementing these complementary methodologies, I aim to provide a nuanced understanding of how different aspects of ESG performance relate to various banking risk measures across the risk distribution.
+
+
 
 # Results
 
