@@ -144,16 +144,15 @@ During the data retrieving process, first all public and private companies were 
 
 The merged dataset was constructed by performing an inner join between the regulatory data (EBA) and ESG data (Refinitiv). This merging approach ensured that only banks and years appearing in both datasets are retained for the final analytical sample. This ensures that each record in the final dataset contains both the regulatory capital and risk information and the ESG performance indicators for a given institution-year observation. The two datasets were merged on the bank name and the year. Since the bank names differ between the two datasets, the Legal Entity Identifier (LEI) was used to merge the datasets. 
 
-
 # Descriptive Analyses
 
-## Descriptive Analysis
+This section provides an overview of the data used in the analysis, covering the period 2020--2023 for approximately 100 unique European banks in the EBA dataset. It presents descriptive statistics for the main variables of interest, examines their correlations, and illustrates their distributions and trends over time.
 
-This section provides an overview of the data used in the analysis, covering the period 2020-2023 for approximately 100 unique Eurozone banks.
+## Summary Statistics
 
-### Summary Statistics
+Table \@ref(tab:summary-stats) provides summary statistics for the key variables in our analysis, including overall ESG scores, ESG pillar scores (environmental, social, governance), and various banking risk and control measures (e.g., capital ratios, leverage, provisions, liquidity, and equity ratios). 
 
-Table \@ref(tab:summary-stats) presents the summary statistics for the key variables used in our models, including ESG scores, banking risk indicators, and control variables.
+>>>
 
 ```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics of Key Variables."}
 # Define the variables you want to summarize
@@ -168,15 +167,11 @@ summary_table <- generate_summary_table(data_analysis,
                                         vars = key_vars_summary,
                                         title = "Descriptive Statistics of Key Variables")
 print(summary_table)
-
-# Optional: Save the table for external use (e.g., if compiling LaTeX separately)
-# save_kable(summary_table, "tables/table_summary_stats.tex")
-
 ```
 
-### Correlations
+## Correlations
 
-Table \@ref(tab:correlation-matrix) shows the Pearson correlation coefficients between the main variables. This helps understand the linear associations present in the data.
+Table \@ref(tab:correlation-matrix) shows the Pearson correlation coefficients among the main variables. >>
 
 ```{r correlation-matrix, echo=FALSE, results='asis', fig.cap="Correlation Matrix."}
 # Define variables for the correlation matrix (can be a subset for readability)
@@ -190,14 +185,11 @@ correlation_table <- generate_correlation_table(data_analysis,
                                                 vars = cor_vars,
                                                 title = "Correlation Matrix")
 print(correlation_table)
-
-# Optional: Save the table
-# save_kable(correlation_table, "tables/table_correlation.tex")
 ```
 
-### Variable Distributions
+## Variable Distributions
 
-Figure \@ref(fig:distributions) illustrates the distributions of selected key variables using histograms and density plots.
+Figure \@ref(fig:distributions) illustrates the distributions of selected key variables. >> 
 
 ```{r distributions, echo=FALSE, fig.cap="Distributions of Key Variables."}
 # Define variables for distribution plots
@@ -209,14 +201,11 @@ distribution_plot <- generate_distribution_plots(data_analysis, dist_vars)
 
 # Print the plot to include it in the document
 print(distribution_plot)
-
-# Optional: Save the plot
-# ggsave("figures/figure_distributions.png", plot = distribution_plot, width = 8, height = 6, dpi = 300)
 ```
 
-### Time Trends (Optional)
+## Time Trends
 
-Figure \@ref(fig:time-trends) shows the average trend of selected variables over the sample period (2020-2023).
+Figure \@ref(fig:time-trends) shows the mean values of selected variables across the years 2020--2023. >>
 
 ```{r time-trends, echo=FALSE, fig.cap="Average Trends Over Time."}
 # Define variables for time trend plots
@@ -227,10 +216,12 @@ time_trend_plot <- generate_time_trend_plots(data_analysis, trend_vars)
 
 # Print the plot
 print(time_trend_plot)
-
-# Optional: Save the plot
-# ggsave("figures/figure_time_trends.png", plot = time_trend_plot, width = 9, height = 4, dpi = 300)
 ```
+
+
+
+
+
 
 # Methodology
 
@@ -239,7 +230,7 @@ print(time_trend_plot)
 
 
 # Conclusion
-
+  
 # Appendix
 
 ## References
