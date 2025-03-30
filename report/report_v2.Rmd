@@ -146,13 +146,21 @@ The merged dataset was constructed by performing an inner join between the regul
 
 # Descriptive Analyses
 
-This section provides an overview of the data used in the analysis, covering the period 2020--2023 for approximately 100 unique European banks in the EBA dataset. It presents descriptive statistics for the main variables of interest, examines their correlations, and illustrates their distributions and trends over time.
+This section provides an overview of the data used in the analysis, covering the period 2020-2023 for approximately 100 European banks in the EBA dataset. It presents descriptive statistics for the main variables of interest, examines their correlations, and illustrates their distributions and trends over time.
 
 ## Summary Statistics
 
-Table \@ref(tab:summary-stats) provides summary statistics for the key variables in our analysis, including overall ESG scores, ESG pillar scores (environmental, social, governance), and various banking risk and control measures (e.g., capital ratios, leverage, provisions, liquidity, and equity ratios). 
+Table \@ref(tab:summary-stats) presents descriptive statistics for the primary variables of interest. Our sample consists of 132 bank-year observations across the four-year period. The ESG scores exhibit considerable variation, with the overall ESG score averaging 73.32 (on a scale of 0-100, with the higher the better) and a standard deviation of 11.95 (so the majority tend to cluster around the average). Among the three ESG pillars, banks perform strongest in environmental metrics (mean = 85.98), followed by social (75.36) and governance (68.62). This pattern reflects the European banking sector's significant emphasis on environmental priorities in recent years, likely driven by EU policy initiatives such as the European Green Deal and the EU Taxonomy Regulation.
 
->>>
+The governance pillar displays the highest variability (standard deviation = 18.94), indicating substantial heterogeneity in governance practices across European banks. This variation suggests that while environmental standards have become relatively more harmonized, governance structures and practices remain diverse across institutions.
+
+Regarding the risk-weighted capital measures, the dataset shows that banks hold, on average, a Common Equity Tier 1 (CET1) risk exposure ratio of 0.60, with Tier 1 and total capital risk exposures standing at 0.67 and 0.76, respectively. These ratios capture how much high-quality capital (e.g., common stock and retained earnings, plus additional Tier 1 or total regulatory capital) a bank maintains relative to its risk-weighted assets. By exceeding regulatory minima, most institutions in our sample signal relatively prudent capital management practices, although the minimum values (ranging from 0.29 to 0.35) reveal that certain banks operate with tighter buffers, potentially reflecting more aggressive asset compositions or narrower margins for absorbing losses.
+
+Turning to the leverage ratio—an unweighted measure of capital adequacy that compares Tier 1 capital against total on- and off-balance-sheet exposures—it averages 0.24 in our sample, with modest dispersion (standard deviation = 0.06). This indicates that while most banks maintain similar levels of Tier 1 capital relative to overall exposure, a minority of institutions deviate significantly in either more or less conservative directions.
+
+Provisions, which represent funds set aside to cover expected credit losses, display substantial variation (standard deviation = 10,001.15), reflecting differences in bank size, credit risk appetite, and loan portfolio composition. When normalized as a provisions ratio (average = 0.05), these differences remain pronounced (minimum = 0.002, maximum = 0.38), signaling diverse approaches to loan-loss absorption across institutions. The liquidity ratio (mean = 0.15) serves as an indicator of the share of liquid assets available to meet short-term obligations, whereas the risk-weighted assets (RWA) ratio (average = 0.37) measures how much of a bank’s balance sheet is exposed to assets that require regulatory capital based on their riskiness, thus highlighting each bank’s overall risk management strategy.
+
+Bank size, as captured by the natural log of total assets (mean = 13.49), underscores the mix of medium-sized and large European banks in our sample, with values ranging from 10.71 to 16.16. Finally, the equity-to-assets ratio averages 0.07, reflecting the industry’s characteristic high reliance on borrowed funds relative to owner’s equity—an attribute of the banking sector that, when paired with other capital and liquidity metrics, plays a crucial role in determining resilience to financial shocks.
 
 ```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics of Key Variables."}
 # Define the variables you want to summarize
@@ -218,7 +226,7 @@ time_trend_plot <- generate_time_trend_plots(data_analysis, trend_vars)
 print(time_trend_plot)
 ```
 
-
+  
 
 
 
