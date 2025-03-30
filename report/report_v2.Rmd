@@ -42,6 +42,15 @@ library(AER)
 library(gridExtra)
 library(kableExtra)
 library(modelsummary)
+library(plm)
+library(dplyr)
+library(tidyr)
+library(kableExtra)
+library(ggplot2)
+library(patchwork)
+library(modelsummary) # Already used in your example
+library(broom)        # Already used in your example
+
 
 sink(file = tempfile())
 invisible(source(here::here("R", "import_ESG.R")))
@@ -138,101 +147,90 @@ The merged dataset was constructed by performing an inner join between the regul
 
 # Descriptive Analyses
 
-```{r}
-# Run exploratory analysis with the fixed functions
-exploratory_results <- run_exploratory_analysis(data_analysis)
-# Create formatted report with proper table formatting
-exploratory_report <- create_exploratory_report(exploratory_results)
+## Descriptive Analysis
+
+This section provides an overview of the data used in the analysis, covering the period 2020-2023 for approximately 100 unique Eurozone banks.
+
+### Summary Statistics
+
+Table \@ref(tab:summary-stats) presents the summary statistics for the key variables used in our models, including ESG scores, banking risk indicators, and control variables.
+
+```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics of Key Variables."}
+# Define the variables you want to summarize
+key_vars_summary <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
+                      "governance_pillar_score", "cet1_risk_exposure", "tier1_risk_exposure",
+                      "totalcap_risk_exposure", "leverage_ratio", "provisions",
+                      "provisions_ratio", "liquidity_ratio", "rwa_ratio",
+                      "log_assets", "equity_to_assets") # Select relevant vars
+
+# Generate and print the table
+summary_table <- generate_summary_table(data_analysis,
+                                        vars = key_vars_summary,
+                                        title = "Descriptive Statistics of Key Variables")
+print(summary_table)
+
+# Optional: Save the table for external use (e.g., if compiling LaTeX separately)
+# save_kable(summary_table, "tables/table_summary_stats.tex")
+
 ```
 
+### Correlations
 
-```{r summary-statistics-table, results='asis'}
-if(!is.null(exploratory_report$summary_statistics)) {
-  cat(exploratory_report$summary_statistics)
-}
+Table \@ref(tab:correlation-matrix) shows the Pearson correlation coefficients between the main variables. This helps understand the linear associations present in the data.
+
+```{r correlation-matrix, echo=FALSE, results='asis', fig.cap="Correlation Matrix."}
+# Define variables for the correlation matrix (can be a subset for readability)
+cor_vars <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
+              "governance_pillar_score", "cet1_risk_exposure", "leverage_ratio",
+              "provisions_ratio", "liquidity_ratio", "rwa_ratio",
+              "log_assets", "equity_to_assets")
+
+# Generate and print the correlation table
+correlation_table <- generate_correlation_table(data_analysis,
+                                                vars = cor_vars,
+                                                title = "Correlation Matrix")
+print(correlation_table)
+
+# Optional: Save the table
+# save_kable(correlation_table, "tables/table_correlation.tex")
 ```
 
-```{r exploratory-data-overview, results='asis'}
-if(!is.null(exploratory_report$data_coverage)) {
-  cat(exploratory_report$data_coverage)
-}
+### Variable Distributions
+
+Figure \@ref(fig:distributions) illustrates the distributions of selected key variables using histograms and density plots.
+
+```{r distributions, echo=FALSE, fig.cap="Distributions of Key Variables."}
+# Define variables for distribution plots
+dist_vars <- c("esg_score", "cet1_risk_exposure", "leverage_ratio",
+               "log_assets", "equity_to_assets") # Choose a few important ones
+
+# Generate the plot
+distribution_plot <- generate_distribution_plots(data_analysis, dist_vars)
+
+# Print the plot to include it in the document
+print(distribution_plot)
+
+# Optional: Save the plot
+# ggsave("figures/figure_distributions.png", plot = distribution_plot, width = 8, height = 6, dpi = 300)
 ```
 
-```{r exploratory-country-composition, results='asis'}
-if(!is.null(exploratory_report$country_composition)) {
-  cat(exploratory_report$country_composition)
-}
-```
+### Time Trends (Optional)
 
-```{r exploratory-yearly-esg, results='asis'}
-if(!is.null(exploratory_report$yearly_esg)) {
-  cat(exploratory_report$yearly_esg)
-}
-```
+Figure \@ref(fig:time-trends) shows the average trend of selected variables over the sample period (2020-2023).
 
-```{r exploratory-esg-by-size, results='asis'}
-if(!is.null(exploratory_report$esg_by_size)) {
-  cat(exploratory_report$esg_by_size)
-}
-```
+```{r time-trends, echo=FALSE, fig.cap="Average Trends Over Time."}
+# Define variables for time trend plots
+trend_vars <- c("esg_score", "cet1_risk_exposure", "leverage_ratio", "liquidity_ratio")
 
-```{r, results='asis'}
-cat("\\newpage")
-```
+# Generate the plot
+time_trend_plot <- generate_time_trend_plots(data_analysis, trend_vars)
 
-```{r exploratory-esg-hist, fig.height=5, fig.width=10}
-# Display ESG histogram plot
-if(!is.null(exploratory_results$esg_hist)) {
-  exploratory_results$esg_hist
-}
-```
+# Print the plot
+print(time_trend_plot)
 
-```{r exploratory-pillar-boxplot, fig.height=5, fig.width=10}
-# Display ESG pillar boxplot
-if(!is.null(exploratory_results$pillar_boxplot)) {
-  exploratory_results$pillar_boxplot
-}
+# Optional: Save the plot
+# ggsave("figures/figure_time_trends.png", plot = time_trend_plot, width = 9, height = 4, dpi = 300)
 ```
-
-```{r, results='asis'}
-cat("\\newpage")
-```
-
-```{r exploratory-esg-trend, fig.height=5, fig.width=10}
-# Display ESG trend plot
-if(!is.null(exploratory_results$esg_trend_plot)) {
-  exploratory_results$esg_trend_plot
-}
-```
-
-```{r exploratory-pillar-trend, fig.height=5, fig.width=10}
-# Display ESG pillar trends
-if(!is.null(exploratory_results$pillar_trend_plot)) {
-  exploratory_results$pillar_trend_plot
-}
-```
-
-```{r exploratory-risk-trends, fig.height=4, fig.width=8}
-# Display risk trends
-if(!is.null(exploratory_report$risk_trend_plot)) {
-  exploratory_report$risk_trend_plot
-}
-```
-
-```{r exploratory-risk-by-esg}
-# Display risk by ESG quartile
-if(!is.null(exploratory_report$risk_by_esg)) {
-  exploratory_report$risk_by_esg
-}
-```
-
-```{r exploratory-scatter-plots, fig.height=4, fig.width=8}
-# Display ESG vs CET1 scatter plot
-if(!is.null(exploratory_report$esg_cet1_plot)) {
-  exploratory_report$esg_cet1_plot
-}
-```
-
 
 # Methodology
 
