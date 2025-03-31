@@ -592,6 +592,12 @@ To address some of these concerns, we implemented bootstrap methods for computin
 
 ## Principal Component Analysis
 
+Building on the methodological framework outlined in Section 5.5, this section presents the results from the Principal Component Analysis (PCA) of ESG dimensions and their relationship with banking risk measures. While the previous fixed effects and quantile regression analyses provide valuable insights into the relationships between aggregate ESG scores or individual pillars and risk metrics, PCA offers a complementary approach that addresses potential multicollinearity and captures the underlying structure of ESG performance beyond the conventional three-pillar framework.
+
+### Component Structure and Variance Explanation
+
+Figure \@ref(fig:pca-results) presents the scree plot of principal components, revealing that the first five components collectively explain approximately 83% of the total variance in ESG variables. The first component alone accounts for 46.2% of the variance, followed by the second component with 13.8%, indicating a substantial dimensionality reduction from the original set of ESG variables. This pattern suggests that while ESG performance is multidimensional, a relatively small number of underlying factors capture the majority of variation across European banks.
+
 
 ```{r}
 pca_results <- run_pca_esg_analysis(
@@ -607,23 +613,77 @@ pca_results <- run_pca_esg_analysis(
 pca_results$visualizations$scree_plot
 ```
 
+The loading patterns displayed in Figure \@ref(fig:pca-loading-plot) provide insights into the composition of these principal components. The first principal component (PC1) shows negative associations with multiple ESG variables, including the overall ESG score, ESG score squared, social score, social score squared, and governance score squared. This pattern suggests that PC1 represents a general ESG factor that captures the common variance across multiple dimensions of sustainability performance. The negative loadings indicate that higher values on this component correspond to lower overall ESG performance, essentially making PC1 an inverse measure of general ESG quality.
 
 ```{r pca-loading-plot}
 pca_results$visualizations$loading_plot
 ```
 
+The second principal component (PC2) demonstrates a more nuanced pattern with positive associations with "ESG Combined" and "Product Responsibility," but negative associations with "Environmental Innovation," "Environmental Score Squared," and "Environmental Score." This combination suggests that PC2 primarily contrasts social and product responsibility aspects against environmental considerations, potentially capturing a trade-off between these dimensions within banks' sustainability strategies.
+
+As detailed in Table \@ref(tab:pca-interpretation), the third principal component (PC3, 10.2% of variance) juxtaposes product responsibility and social performance against management quality and governance, potentially representing a distinction between external stakeholder engagement and internal governance structures. PC4 (7.2% of variance) appears to capture ESG controversies and innovations versus product responsibility and emissions management, while PC5 (5.4% of variance) contrasts emissions and product responsibility against human rights and community engagement.
+
 ```{r pca-interpretation}
 pca_results$visualizations$pc_interpretation
 ```
+
+These component structures align with and extend previous research on the multidimensional nature of ESG performance. The identification of components that distinguish between different aspects of sustainability beyond the conventional environmental, social, and governance pillars supports the findings of Goss and Roberts (2010), who similarly documented complex underlying structures in corporate social responsibility data. The emergence of a component specifically related to controversies (PC4) is particularly noteworthy given recent literature highlighting the importance of ESG controversies in financial stability (Amiraslani et al., 2017; Galletta et al., 2022).
+
+### Relationship Between Principal Components and Banking Risk
+
+Table \@ref(tab:pca-table) presents the fixed effects estimates for the relationship between the extracted principal components and various banking risk measures. Unlike the models based on aggregate ESG scores or individual pillars, the PCA approach allows for examining how distinct underlying dimensions of ESG performance relate to risk metrics while avoiding multicollinearity issues.
 
 ```{r pca-table}
 pca_results$visualizations$pc_model_table
 ```
 
+The results reveal several notable patterns. PC1, representing the inverse of general ESG quality, shows a positive but statistically insignificant relationship with CET1 risk exposure (0.001), and negative but insignificant relationships with Tier 1 and total capital risk exposures (-0.002 and -0.003, respectively). This pattern suggests that general ESG quality (inverse of PC1) might be weakly associated with lower CET1 risk exposure but higher Tier 1 and total capital ratios, though these relationships do not reach conventional significance levels.
+
+PC2, contrasting social/product responsibility against environmental considerations, demonstrates a consistent negative relationship with capital adequacy measures, though again without statistical significance. This might suggest that banks emphasizing social and product responsibility over environmental aspects tend to maintain somewhat lower capital ratios, potentially reflecting different risk management priorities across these sustainability dimensions.
+
+PC3, juxtaposing stakeholder engagement against governance, exhibits the strongest relationships with capital adequacy measures, with coefficients of -0.010 for CET1 risk exposure, -0.007 for Tier 1 risk exposure, and -0.009 for total capital risk exposure. While these relationships do not reach statistical significance at conventional levels, their consistent direction and relatively larger magnitudes suggest that banks with stronger external stakeholder engagement relative to governance might maintain lower capital ratios. This aligns with findings by Di Tommaso and Thornton (2020), who documented relationships between governance structures and bank stability measures.
+
+For provisions ratio, PC2 shows a marginally significant positive relationship (0.010, p < 0.1), indicating that banks emphasizing social and product responsibility over environmental considerations tend to maintain higher provisions. This pattern is consistent with a risk management approach that prioritizes protection against potential loan losses, potentially offsetting relatively lower capital ratios.
+
+PC4 and PC5 show varied relationships across risk measures, though generally without statistical significance. The lack of consistent patterns for these components might reflect their more specialized nature, capturing aspects of ESG performance that are less directly relevant for the broad risk metrics examined here.
+
+Across all models, the control variables maintain patterns similar to those observed in previous analyses. Bank size (log assets) positively correlates with capital adequacy measures, with significant coefficients ranging from 0.199 to 0.261 (p < 0.001). Similarly, the equity-to-assets ratio demonstrates strong positive associations with capital adequacy measures, leverage ratio, and provisions ratio, with coefficients ranging from 1.771 to 4.611 (p < 0.001). These robust relationships underscore the importance of controlling for fundamental bank characteristics when examining the influence of ESG factors on risk metrics.
+
+### Model Performance Comparison
+
+Table \@ref(tab:pca-comparison-table) provides a direct comparison of model performance between the original ESG-based models and the PCA-based models across different risk measures. This comparison offers insights into whether the dimensionality reduction and multicollinearity mitigation provided by PCA enhance the explanatory power of our models.
+
 ```{r pca-comparison-table}
 pca_results$visualizations$comparison_table
 ```
 
+The results indicate that the PCA-based models generally outperform the original models in terms of R-squared values. For CET1 risk exposure, the R-squared increases from 0.444 to 0.447, representing a modest improvement of 0.003. Similar small improvements are observed for Tier 1 risk exposure (0.425 to 0.427) and total capital risk exposure (0.445 to 0.447). More substantial gains emerge for leverage ratio (0.364 to 0.391, an improvement of 0.027), provisions (0.179 to 0.196, an improvement of 0.017), provisions ratio (0.187 to 0.211, an improvement of 0.024), and RWA ratio (0.193 to 0.219, an improvement of 0.026).
+
+The only measure for which the PCA approach does not improve model fit is liquidity ratio, where the R-squared slightly decreases from 0.143 to 0.140. This exception might reflect the unique determinants of bank liquidity, which may be less closely connected to the underlying dimensions of ESG performance captured by our principal components.
+
+The general pattern of improved model performance suggests that the PCA approach effectively captures important aspects of ESG performance that are relevant for banking risk, while reducing noise and redundancy in the original ESG variables. This aligns with methodological insights from Goss and Roberts (2010), who similarly found that dimensionality reduction techniques enhanced the explanatory power of models examining the relationship between social responsibility and financial outcomes.
+
+### Interpretation and Implications
+
+The PCA results offer several important insights beyond those provided by the aggregate ESG and pillar-level analyses. First, they confirm that ESG performance is multidimensional, with several distinct underlying factors that exhibit different relationships with banking risk measures. This complexity underscores the limitations of relying solely on aggregate ESG scores or even the three conventional pillars when examining the implications of sustainability for financial institutions.
+
+Second, the emergence of components that cut across traditional ESG categories—such as PC2 contrasting social responsibility against environmental considerations, or PC3 juxtaposing stakeholder engagement against governance—suggests potential trade-offs or strategic choices within banks' sustainability approaches. These strategic orientations may have different implications for risk management and capital allocation decisions, extending beyond simple positive or negative relationships with overall ESG quality.
+
+Third, the improved model performance achieved through PCA suggests that this approach captures meaningful variation in sustainability performance that is relevant for banking risk. The gains in explanatory power, while modest for some risk measures, are consistent across multiple outcomes, indicating that the dimensionality reduction enhances our ability to identify associations between ESG factors and risk metrics.
+
+The results also align with recent regulatory perspectives emphasizing the need for a more nuanced understanding of ESG risks in banking supervision. As noted by the European Banking Authority (2020), ESG factors can materialize in different ways across financial institutions, affecting various risk dimensions depending on business models and strategic priorities. The PCA approach, by identifying distinct underlying dimensions of ESG performance beyond conventional categories, offers a potentially valuable tool for supervisors seeking to assess how sustainability considerations might influence banking stability.
+
+### Limitations of the PCA Approach
+
+While the PCA results provide valuable insights, several limitations warrant consideration. First, the interpretation of principal components is inherently subjective, relying on patterns of variable loadings that may have multiple plausible explanations. While our interpretations align with theoretical expectations from the literature, alternative frameworks might suggest different meanings for the identified components.
+
+Second, PCA assumes linear relationships between variables, potentially missing more complex interactions or non-linear patterns in ESG performance. This limitation is particularly relevant given the evidence of non-linear relationships between individual ESG pillars and risk measures identified in our fixed effects models (Section 6.3).
+
+Third, the PCA approach, while addressing multicollinearity, does not resolve potential endogeneity concerns such as reverse causality or omitted variables. Banks' risk profiles might influence their sustainability priorities, creating bidirectional relationships that our models do not fully disentangle.
+
+Finally, the relatively small sample size (132 bank-year observations) limits the stability and precision of our PCA results. With a larger set of ESG variables, more robust component structures might emerge, potentially capturing additional nuances in sustainability performance relevant for banking risk.
+
+Despite these limitations, the PCA approach provides a valuable complement to the aggregate ESG and pillar-level analyses, offering insights into the underlying structure of sustainability performance and its implications for banking risk that would be difficult to obtain through conventional methods alone.
 
 # Conclusion
 
