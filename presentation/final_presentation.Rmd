@@ -1,0 +1,331 @@
+---
+title: "ESG Performance and Banking Risk"
+author: "Maurits de Haan"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output: 
+  ioslides_presentation: 
+    widescreen: true
+    css: "custom.css"
+    logo: fno_logo.png
+    transition: faster
+    smaller: false
+subtitle: Data Science Lab Final Presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, 
+                     error = FALSE, fig.width = 10, fig.height = 5.5)
+
+# Load required libraries
+library(plm)
+library(dplyr)
+library(stargazer)
+library(kableExtra)
+library(modelsummary)
+library(broom)
+library(ggplot2)
+library(gridExtra)
+library(plm)
+library(AER)
+library(gridExtra)
+library(kableExtra)
+library(modelsummary)
+library(plm)
+library(dplyr)
+library(tidyr)
+library(kableExtra)
+library(ggplot2)
+library(patchwork)
+library(modelsummary) 
+library(broom)        
+library(knitr)
+library(kableExtra)
+
+# Silently run the source files to get the data and functions
+sink(file = tempfile())
+invisible(source(here::here("R", "import_ESG.R")))
+invisible(source(here::here("R", "import_financial.R")))
+invisible(source(here::here("R", "merging_ESG_financial.R")))
+invisible(source(here::here("R", "analysis_fixed_effects_quadratic.R")))
+invisible(source(here::here("R", "analysis_quantile.R")))
+invisible(source(here::here("R", "analysis_pca.R")))
+invisible(source(here::here("R", "analysis_iv.R")))
+invisible(source(here::here("R", "analysis_exp.R")))
+sink()
+
+# Run the analyses that will be used in the presentation
+results <- run_simplified_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "leverage_ratio", "provisions_ratio"),
+  tau_values = c(0.1, 0.25, 0.5, 0.75, 0.9)
+)
+
+pca_results <- run_pca_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "totalcap_risk_exposure", "leverage_ratio", "provisions", 
+               "provisions_ratio", "liquidity_ratio", "rwa_ratio"),
+  variance_threshold = 0.8
+)
+
+iv_results <- run_iv_analysis(data_analysis)
+invisible(create_iv_visualizations())
+```
+
+## Research Context
+
+### Research Question
+
+<div class="columns-2">
+<div>
+- **How does ESG performance relate to banking risk?**
+  - Focus on regulatory capital adequacy metrics
+  - European banks, 2020-2023
+  - Multiple methodological approaches
+
+- **Why it matters:**
+  - Regulatory perspective
+  - Scientific contribution
+  - ESG integration in financial stability
+</div>
+
+<div>
+```{r, fig.height=3.2}
+time_trend_plot <- generate_time_trend_plots(data_analysis, 
+                                       c("esg_score", "cet1_risk_exposure"))
+print(time_trend_plot)
+```
+</div>
+</div>
+
+## Data Overview
+
+### Key Variables & Descriptive Statistics
+
+<div class="columns-2">
+<div>
+**ESG Variables:**
+- Overall ESG score (mean: 73.3)
+- Environmental pillar (mean: 86.0)
+- Social pillar (mean: 75.4)
+- Governance pillar (mean: 68.6)
+
+**Key Bank Risk Metrics:**
+- CET1 risk exposure (mean: 0.60)
+- Leverage ratio (mean: 0.24)
+- Provisions ratio (mean: 0.05)
+</div>
+
+<div>
+```{r, fig.height=3.5}
+distribution_plot <- generate_distribution_plots(data_analysis, 
+                                        c("esg_score", "cet1_risk_exposure"))
+print(distribution_plot)
+```
+</div>
+</div>
+
+## Methodological Framework
+
+### Multi-Method Approach
+
+<div class="columns-2">
+<div>
+1. **Fixed Effects Panel Models**
+   - Controls for bank/time unobserved heterogeneity
+   - Linear & non-linear specifications
+
+2. **Quantile Regression**
+   - Heterogeneous effects across risk distribution
+
+3. **Instrumental Variables (IV)**
+   - Addresses endogeneity concerns
+   - Country-year averages as instruments
+
+4. **Principal Component Analysis (PCA)**
+   - Dimensionality reduction of ESG components
+   - Captures underlying ESG structure
+</div>
+
+<div>
+**Why multiple methods?**
+- Each addresses different methodological challenges
+- Triangulation for robust inference
+- Complementary insights across risk distribution
+- Enhanced ability to detect complex relationships
+
+**Data constraints:**
+- 132 bank-year observations
+- Short time dimension (4 years)
+- Need for statistically efficient approaches
+</div>
+</div>
+
+## Fixed Effects Results
+
+### ESG Effects on Capital Ratios
+
+```{r}
+# Create a streamlined version of the fixed effects table for the presentation
+# Focus on key results only
+fe_table <- ms_esg_table
+
+# Display a more compact version for the presentation
+kable(fe_table[1:4, 1:4], format = "html", 
+      caption = "Fixed Effects Panel Models: Impact of ESG on Risk Measures")
+```
+
+- **Key Finding:** Modest relationship between overall ESG and capital ratios
+- Weak positive but statistically insignificant coefficients
+- Linear models may mask heterogeneous effects
+- Need for more nuanced analytical approaches
+
+## ESG Pillar-Level Findings
+
+```{r}
+# Create a streamlined version of the pillar table for the presentation
+pillar_table <- ms_pillar_table[1:8, 1:4]
+
+# Display a more compact version for the presentation
+kable(pillar_table, format = "html",
+      caption = "Pillar-Level Effects on CET1 Risk Exposure")
+```
+
+- **Social pillar:** Strongest positive association with capital adequacy (0.027**)
+- **Environmental pillar:** Mixed effects depending on risk measure
+- **Governance pillar:** Generally weak relationships
+- Evidence of non-linear relationships (quadratic terms significant)
+
+## Quantile Regression Insights
+
+### Heterogeneous ESG Effects Across Risk Distribution
+
+```{r, fig.height=5}
+# Display the quantile regression plot for ESG score
+results$plots$combined$esg
+```
+
+- **Key insight:** ESG effects vary substantially across risk distribution
+- Stronger negative effect for banks with lower capital ratios
+- Statistical significance diminishes for high-quantile banks
+- Standard mean-based models mask this heterogeneity
+
+## Social Pillar Quantile Effects
+
+```{r, fig.height=5}
+# Display the quantile regression plot for Social pillar
+results$plots$combined$social
+```
+
+- **Social pillar:** Consistently negative effect on capital risk
+- Strongest at middle-to-upper quantiles (0.50-0.75)
+- Capital buffer complementarity with social responsibility
+- Suggests strategic differentiation in ESG focus across risk profiles
+
+## PCA Results: ESG Dimensionality
+
+```{r, fig.height=5}
+# Display the PCA scree plot
+pca_results$visualizations$scree_plot
+```
+
+- First 5 components explain ~83% of ESG variance
+- PC1 (46.2%): General ESG quality (inverse measure)
+- PC2 (13.8%): Social/product responsibility vs environmental focus
+- PC3 (10.2%): Stakeholder engagement vs governance
+- Reveals complex multidimensional nature of ESG performance
+
+## PCA Component Structure
+
+```{r, fig.height=5.5}
+# Display the PCA loading plot
+pca_results$visualizations$loading_plot
+```
+
+- **Key insight:** ESG dimensions extend beyond traditional E-S-G pillars
+- Cross-cutting components suggest strategic trade-offs
+- Evidence of potential ESG dimensionality not captured by aggregate scores
+- More nuanced structure relevant for understanding risk relationships
+
+## IV vs Fixed Effects: Endogeneity
+
+```{r, fig.height=5}
+# Display the IV vs FE comparison plot
+grid.arrange(
+  iv_comparison_plot + theme(plot.margin = margin(0.1, 0.1, 0.5, 0.1, "cm")),
+  ncol = 1
+)
+```
+
+- **IV estimates substantially larger** than fixed effects
+- Suggests negative bias in conventional estimates
+- Evidence that endogeneity concerns are significant
+- Different directions across risk metrics (e.g., RWA ratio)
+
+## Model Performance Enhancement
+
+```{r}
+# Display the PCA vs standard model comparison
+pca_results$visualizations$comparison_table %>%
+  kable(format = "html", caption = "Model Performance: Original vs. PCA") %>%
+  kable_styling(font_size = 14)
+```
+
+- **PCA models outperform original specifications**
+- Modest improvements for CET1 risk exposure (0.003)
+- Larger gains for leverage ratio (0.027) and provisions
+- Evidence that dimensionality reduction enhances explanatory power
+- Captures risk-relevant ESG structure more effectively
+
+## Key Data Science Insights
+
+### Methodological Implications
+
+- **Complex relationships require multiple approaches**
+  - No single method provides complete picture
+  - Triangulation yields more robust inference
+
+- **Quantile regression reveals heterogeneity**
+  - Mean-based models mask differential effects
+  - Distribution-wide perspective essential
+
+- **Dimensionality reduction improves modeling**
+  - Enhanced explanatory power
+  - Reveals underlying ESG structure beyond traditional pillars
+
+- **Endogeneity matters substantively**
+  - Conventional estimates likely biased
+  - Direction of causality requires careful identification
+
+## Conclusion & Future Directions
+
+### Toward Better ESG-Risk Modeling
+
+- **ESG-risk relationship is nuanced:**
+  - Varies across risk distribution
+  - Different across ESG dimensions
+  - Non-linear patterns present
+
+- **Methodological recommendations:**
+  - Employ multiple complementary approaches
+  - Consider distributional heterogeneity
+  - Address potential endogeneity
+  - Look beyond aggregate scores
+
+- **Extensions for future research:**
+  - Longer time series with structural breaks
+  - Machine learning approaches
+  - Regulatory stress testing incorporation
+  - Dynamic panel methods
+
+## Thank You & Questions
+
+```{r, fig.height=5}
+# Create a summary visualization for the final slide
+grid.arrange(
+  results$plots$combined$esg,
+  pca_results$visualizations$loading_plot,
+  ncol = 2
+)
+```
