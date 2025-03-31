@@ -289,21 +289,6 @@ $$Q_{Y_{i,t}}(\tau|\text{ENV}_{i,t}, \text{SOC}_{i,t}, \text{GOV}_{i,t}, \mathbf
 
 This allows for examining whether specific ESG components have differential impacts across the risk distribution, a nuance that means-based approaches might obscure.
 
-## Principal Component Analysis
-
-To address the high dimensionality and potential multicollinearity among ESG components, I employ Principal Component Analysis (PCA), a dimensionality reduction technique. This approach is particularly valuable given the detailed ESG component data available in the Refinitiv database, which includes numerous subcategories beyond the three main pillars.
-
-PCA transforms the original ESG variables into a set of orthogonal principal components that capture the maximum variance in the data:
-
-$$PC_j = \sum_{k=1}^p a_{jk} Z_k$$
-
-where $PC_j$ is the $j$-th principal component, $Z_k$ represents the standardized $k$-th ESG variable, and $a_{jk}$ are the component loadings. I retain enough components to explain approximately 80% of the total variance, with a maximum of five components to maintain interpretability.
-
-These principal components are then used as regressors in the fixed effects model:
-
-$$Y_{i,t} = \beta_0 + \sum_{j=1}^m \beta_j PC_{j,i,t} + \boldsymbol{\beta_{m+1}} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-where $m$ is the number of retained principal components. This PCA approach follows methodological insights from Goss and Roberts (2010), who applied similar techniques to reduce dimensionality in KLD social responsibility data. It allows for capturing the underlying structure of ESG performance while avoiding collinearity issues that might arise when including multiple correlated ESG components simultaneously.
 
 ## Instrumental Variable Approach
 
@@ -323,6 +308,22 @@ $$Y_{i,t} = \beta_0 + \beta_1 \widehat{\text{ESG}}_{i,t} + \boldsymbol{\beta_2} 
 
 where $\widehat{\text{ESG}}_{i,t}$ represents the predicted values from the first stage. Similar instruments are constructed for each pillar score in the pillar-specific IV models. This approach helps isolate the causal effect of ESG performance on banking risk, addressing concerns raised by Bouslah et al. (2013) and Cornett et al. (2016) about the direction of causality between ESG and financial outcomes.
 
+## Principal Component Analysis
+
+To address the high dimensionality and potential multicollinearity among ESG components, I employ Principal Component Analysis (PCA), a dimensionality reduction technique. This approach is particularly valuable given the detailed ESG component data available in the Refinitiv database, which includes numerous subcategories beyond the three main pillars.
+
+PCA transforms the original ESG variables into a set of orthogonal principal components that capture the maximum variance in the data:
+
+$$PC_j = \sum_{k=1}^p a_{jk} Z_k$$
+
+where $PC_j$ is the $j$-th principal component, $Z_k$ represents the standardized $k$-th ESG variable, and $a_{jk}$ are the component loadings. I retain enough components to explain approximately 80% of the total variance, with a maximum of five components to maintain interpretability.
+
+These principal components are then used as regressors in the fixed effects model:
+
+$$Y_{i,t} = \beta_0 + \sum_{j=1}^m \beta_j PC_{j,i,t} + \boldsymbol{\beta_{m+1}} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+
+where $m$ is the number of retained principal components. This PCA approach follows methodological insights from Goss and Roberts (2010), who applied similar techniques to reduce dimensionality in KLD social responsibility data. It allows for capturing the underlying structure of ESG performance while avoiding collinearity issues that might arise when including multiple correlated ESG components simultaneously.
+
 ## Robustness and Specification Tests
 
 For each model, I conduct a series of robustness and specification tests to ensure the validity of the results. For the fixed effects models, I implement Hausman tests to confirm the appropriateness of fixed versus random effects specifications. I also employ Driscoll-Kraay standard errors to address potential cross-sectional dependence, a common concern in panel data with financial institutions, as highlighted by Curcio et al. (2024).
@@ -341,15 +342,13 @@ This section presents the main results from the empirical analyses, focusing on 
 
 ### Overall ESG Score Effects
 
-Table \@ref(fig:time-trends) presents the results of the two-way fixed effects models examining the relationship between banks' overall ESG scores and various risk measures. These models control for both time-invariant bank characteristics and common time trends, addressing concerns about unobserved heterogeneity as outlined in the methodology.
+Table \@ref(tab:esg-table) presents 
 
-The results reveal several notable patterns. First, the coefficient of the overall ESG score on CET1 risk exposure is 0.000, with a standard error of 0.005, indicating no statistically significant linear relationship between overall ESG performance and this fundamental capital adequacy measure. Similar patterns emerge for tier1_risk_exposure (coefficient = 0.005, SE = 0.006) and totalcap_risk_exposure (coefficient = 0.006, SE = 0.006), neither of which reaches conventional significance levels. These findings suggest that the direct linear impact of overall ESG scores on regulatory capital ratios is minimal in the European banking sector during the 2020-2023 period.
-For leverage_ratio, the ESG score coefficient is negative (-0.001) but statistically insignificant, while the provisions variable shows a large positive coefficient (116.065) with a substantial standard error (182.282), again failing to reach statistical significance. The provisions_ratio shows a positive but insignificant relationship (coefficient = 0.003, SE = 0.004). The liquidity_ratio and rwa_ratio both show negative relationships with ESG scores (-0.003 and -0.005 respectively), though neither reaches statistical significance.
-The quadratic terms (ESG Score²) are consistently close to zero across all risk measures, with none showing statistical significance. This suggests an absence of strong non-linear relationships between overall ESG performance and risk metrics in the sample. The lack of significance in both linear and quadratic terms indicates that the relationship between aggregate ESG scores and risk measures may be more complex than can be captured by these specifications alone, or that heterogeneity in the sample is masking potential effects.
+```{r esg-table}
+ms_esg_table
+```
 
-Regarding control variables, bank size (Log Assets) shows consistently strong and statistically significant associations with risk measures. The positive coefficients for CET1, tier1, and total capital risk exposures (0.194***, 0.185***, and 0.238*** respectively) indicate that larger banks tend to maintain higher regulatory capital ratios, potentially reflecting their systemic importance and corresponding regulatory expectations. The equity-to-assets ratio similarly demonstrates strong positive associations with most risk measures, particularly with capital adequacy metrics (coefficients ranging from 1.327** to 4.727***), confirming the mechanical relationship between equity capital and regulatory risk measures.
-
-The R² values, ranging from 0.142 (liquidity_ratio) to 0.487 (totalcap_risk_exposure), indicate moderate explanatory power for these models. The relatively higher R² for capital-related risk measures suggests that the included variables capture capital adequacy determinants more effectively than liquidity or provision factors.
+## Instrumental Variables Analysis
 
 ## Quantile Regression Analysis
 
@@ -379,9 +378,7 @@ kable(variables_df,
   column_spec(3, width = "1in")
 ```
 
-```{r esg-table}
-ms_esg_table
-```
+
 
 
 ```{r pillar-table}
