@@ -488,7 +488,11 @@ Finally, while the IV estimates suggest substantial downward bias in the fixed e
 
 ## Quantile Regression Analysis
 
+Building upon the methodological framework outlined in Section 5.3, this section presents the results from quantile regression analysis, which examines the potentially heterogeneous effects of ESG factors across different levels of banking risk. While the fixed effects models presented earlier provide insights into average relationships between ESG performance and risk metrics, they may mask important variations across the risk distribution. Quantile regression addresses this limitation by estimating the relationship at different points in the conditional distribution of the dependent variable, providing a more nuanced understanding of how ESG factors relate to banking risk profiles.
 
+### Overall ESG Score Effects Across Risk Quantiles
+
+Figure \@ref(fig:quantile-ESG) presents the estimated effects of overall ESG scores on banking risk measures across different quantiles. The results reveal patterns that would be obscured in a conventional mean-based analysis. For CET1 risk exposure, the effect of ESG scores is consistently negative across all quantiles, ranging from -0.004 at the 0.1 quantile to -0.002 at the 0.9 quantile. This suggests that higher ESG performance is associated with lower CET1 risk exposure across the entire distribution, with a slightly stronger effect for banks with already lower capital ratios (lower quantiles).
 
 ```{r}
 # Run the quantile regression analysis
@@ -504,7 +508,21 @@ results <- run_simplified_esg_analysis(
 results$plots$combined$esg
 ```
 
-\newpage
+The statistical significance of these effects varies across the distribution. As shown in Table \@ref(tab:quantile-esg-table), the ESG coefficient is significant at the 5% level for the 0.1 quantile (-0.004, p < 0.05) and at the 0.1% level for the 0.25 and 0.5 quantiles (-0.003, p < 0.001). However, it becomes only marginally significant at the 0.75 quantile (-0.003, p < 0.1) and insignificant at the 0.9 quantile (-0.002, p > 0.1). This pattern suggests that ESG performance has a more reliable relationship with capital adequacy for banks in the lower to middle ranges of the risk distribution.
+
+For Tier 1 risk exposure, a similar pattern emerges, with a negative relationship that is most pronounced at the median quantile. The effect becomes more varied at the extremes of the distribution, particularly at the 0.9 quantile where the confidence interval widens substantially. This indicates greater uncertainty in the ESG-risk relationship for banks with the highest Tier 1 risk exposure ratios.
+
+The relationship between ESG scores and leverage ratio shows minimal variation across quantiles, with coefficients close to zero throughout the distribution. This aligns with the findings from fixed effects models, suggesting that ESG performance has limited direct association with leverage decisions.
+
+For provisions ratio, the coefficients are slightly positive and relatively stable across quantiles, though generally lacking statistical significance. This suggests that while higher ESG scores might be associated with marginally higher provisioning, this relationship is not particularly strong at any point in the risk distribution.
+
+Table \@ref(tab:cet1-quantile-esg) provides a detailed view of quantile regression results for CET1 risk exposure across different quantiles. Beyond the ESG coefficient, it reveals interesting patterns in control variables. The effect of log assets on CET1 risk exposure decreases monotonically across quantiles, from 0.027 (p < 0.05) at the 0.1 quantile to -0.040 (p < 0.05) at the 0.9 quantile. This suggests that bank size has a positive relationship with capital adequacy for riskier banks (lower quantiles) but a negative relationship for safer banks (higher quantiles), a nuanced finding that would be missed in mean-based analyses.
+
+Similarly, the coefficient for equity-to-assets ratio shows substantial variation, from a positive but insignificant 1.096 at the 0.1 quantile to a negative and marginally significant -2.294 (p < 0.1) at the 0.9 quantile. This unexpected pattern at higher quantiles might reflect that banks with already high CET1 ratios exhibit different strategic approaches to overall equity levels, potentially optimizing other aspects of their capital structure.
+
+### ESG Pillar Effects Across Risk Quantiles
+
+Disaggregating ESG into its component pillars reveals even more nuanced relationships that vary across the risk distribution, as shown in Figures \@ref(fig:quantile-environmental), \@ref(fig:qunatile-social), and \@ref(fig:quantile-governance).
 
 ```{r quantile-environmental}
 results$plots$combined$environmental
@@ -514,11 +532,12 @@ results$plots$combined$environmental
 results$plots$combined$social
 ```
 
-\newpage
-
 ```{r quantile-governance}
 results$plots$combined$governance
 ```
+
+The environmental pillar demonstrates a relationship with CET1 risk exposure that varies substantially across quantiles. At lower quantiles (0.1 and 0.25), the relationship is weakly negative, becoming more positive at higher quantiles, though generally not reaching statistical significance (Table \@ref(tab:quantile-pillar-table)). This pattern suggests that environmental performance may have different implications for banks depending on their position in the risk distribution, with potentially beneficial effects for lower-risk banks.
+
 
 ```{r}
 summary_data <- get_raw_summary_tables(
@@ -531,18 +550,45 @@ summary_data <- get_raw_summary_tables(
 make_simple_esg_summary_table(summary_data)
 ```
 
+For provisions ratio, the environmental score shows an interesting pattern where the relationship is initially positive at lower quantiles but becomes increasingly negative at higher quantiles. This could indicate that banks with already higher provisioning levels (upper quantiles) that focus on environmental performance might adopt more conservative provisioning practices, while the opposite occurs for banks with lower provisions.
+
+The social pillar exhibits the most consistent relationship with capital adequacy measures across the risk distribution. For CET1 risk exposure, the coefficient is negative across all quantiles, with values ranging from -0.004 at the 0.25 quantile to -0.008 at the 0.75 quantile (Table \@ref(tab:quantile-pillar-table)). The relationship is statistically significant at the 0.1% level for both the 0.25 and 0.5 quantiles, becoming even stronger at the 0.75 quantile. This pattern suggests that social performance has a particularly strong negative association with capital risk for banks in the middle to upper-middle portions of the risk distribution.
+
 ```{r quantile-pillar-table}
 make_simple_pillar_summary_table(summary_data)
 ```
+
+This finding aligns with and extends the results from Ashwin Kumar et al. (2016), who documented relationships between social performance and financial stability. While they found a general association, our quantile analysis reveals that this relationship is more pronounced for banks with moderate to higher capital buffers, suggesting a potential complementarity between social responsibility and prudent capital management for these institutions.
+
+The governance pillar demonstrates the most varied relationship across the risk distribution. For CET1 risk exposure, the coefficient is close to zero at most quantiles, but shows a modest positive relationship at the 0.75 quantile (Table \@ref(tab:quantile-pillar-table)). For provisions ratio, the relationship is slightly positive at median quantiles but becomes negative at extreme quantiles. This heterogeneity aligns with findings from Barth et al. (2022), who observed complex relationships between governance factors and risk metrics.
 
 ```{r cet1-quantile-esg}
 make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
 ```
 
+Table \@ref(tab:leverage-quantile-esg) presents detailed results for the pillar-specific analysis of leverage ratio. Notably, the environmental score shows a statistically significant negative relationship at the 0.25 quantile (-0.001, p < 0.01), but this effect disappears at other points in the distribution. The social and governance pillars show minimal effects across all quantiles. Control variables, particularly equity-to-assets ratio, exhibit strong positive associations with leverage ratio across all quantiles, with coefficients increasing monotonically from 2.193 (p < 0.001) at the 0.1 quantile to 3.010 (p < 0.001) at the 0.9 quantile. This pattern reflects the mechanical relationship between equity holdings and regulatory capital requirements, with the effect becoming stronger for banks with already higher leverage ratios.
+
 ```{r leverage-quantile-esg}
 make_pillar_table(results$coefficients$pillars, "leverage_ratio")
 ```
 
+### Comparison with Previous Research
+
+Our quantile regression findings both complement and extend previous research on the relationship between ESG performance and banking risk. The negative association between social pillar scores and capital risk measures across multiple quantiles aligns with studies by Amiraslani et al. (2017) and Izcan & Bektas (2022), who found that social factors can enhance bank stability. However, our quantile approach reveals that this relationship is not uniform across the risk distribution, being particularly strong for banks in the middle to upper quantiles.
+
+Similarly, the varied relationships observed for the environmental and governance pillars across different quantiles help explain some of the mixed findings in previous literature. For instance, Bannier et al. (2021) found that environmental aspects were negatively related to credit risk for U.S. firms but not consistently for European firms. Our quantile results suggest that such inconsistencies might partially result from heterogeneous effects across different segments of the risk distribution, which would be averaged out in conventional regression approaches.
+
+The minimal relationship between ESG factors and leverage ratio across most quantiles aligns with findings from Palmieri et al. (2023), who documented limited direct associations between ESG performance and leverage decisions. However, our identification of a significant negative relationship between environmental scores and leverage ratio at the 0.25 quantile represents a novel finding that warrants further investigation.
+
+### Limitations and Robustness Considerations
+
+While quantile regression provides valuable insights into heterogeneous ESG effects across the risk distribution, several limitations should be acknowledged. First, the relatively small sample size (132 bank-year observations) limits statistical power, particularly at extreme quantiles where estimates become more uncertain. This is reflected in the wider confidence intervals at the 0.1 and 0.9 quantiles for many coefficients.
+
+Second, while our models control for bank size and equity-to-assets ratio, they may not capture all relevant factors that influence the relationship between ESG performance and banking risk. Omitted variables that vary across the risk distribution could potentially bias our quantile estimates.
+
+Third, the quantile regression approach employed here does not address potential endogeneity concerns, such as reverse causality or selection effects. Banks with particular risk profiles might strategically adjust their ESG investments, creating bidirectional relationships that our models do not disentangle.
+
+To address some of these concerns, we implemented bootstrap methods for computing standard errors, as recommended by Koenker and Hallock (2001). This approach provides more robust inference in the presence of heteroskedasticity, which is likely present across different portions of the risk distribution.
 
 ## Principal Component Analysis
 
@@ -580,7 +626,9 @@ pca_results$visualizations$comparison_table
 
 
 # Conclusion
-  
+
+
+
 # Appendix
 
 ## References
