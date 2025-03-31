@@ -348,42 +348,45 @@ Table \@ref(tab:esg-table) presents
 ms_esg_table
 ```
 
-## Instrumental Variables Analysis
-
-## Quantile Regression Analysis
-
-## Principal Component Analysis
-
-
-
-
-# Conclusion
-  
-# Appendix
-
-## References
-
-## Tables
-
-```{r variables-table, echo=FALSE}
-source("variables_df.R")
-kable(variables_df, 
-      caption = "Overview of variables", 
-      booktabs = TRUE,
-      longtable = TRUE) %>%
-  kable_styling(latex_options = c("striped", "repeat_header", "hold_position"),
-                font_size = 9) %>%
-  column_spec(1, bold = TRUE, width = "2.5in") %>%
-  column_spec(2, width = "2.5in") %>%
-  column_spec(3, width = "1in")
-```
-
-
-
-
 ```{r pillar-table}
 ms_pillar_table
 ```
+
+## Instrumental Variables Analysis
+
+
+```{r iv-display, fig.height=5, fig.width=8, results='hide'}
+# Run the IV analysis on your dataset
+iv_results <- run_iv_analysis(data_analysis)
+# Make sure all visualization objects are available (hide the TRUE output)
+invisible(create_iv_visualizations())
+```
+
+```{r iv-summary-table, fig.width=6}
+# Format the summary table to fit better
+iv_summary_table %>%
+  kable_styling(font_size = 8, latex_options = "scale_down")
+```
+
+```{r iv-plots, fig.height=9, fig.width=8}
+# Arrange plots in a grid with appropriate sizing
+grid.arrange(
+  iv_comparison_plot + theme(plot.margin = margin(0.1, 0.1, 0.5, 0.1, "cm")),
+  iv_pct_diff_plot + theme(plot.margin = margin(0.5, 0.1, 0.1, 0.1, "cm")),
+  ncol = 1,
+  heights = c(1.3, 1)
+)
+```
+
+```{r comparison-fe-iv}
+iv_pillar_table
+```
+
+
+
+## Quantile Regression Analysis
+
+
 
 ```{r}
 # Run the quantile regression analysis
@@ -438,36 +441,9 @@ make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
 make_pillar_table(results$coefficients$pillars, "leverage_ratio")
 ```
 
-## IV
 
-```{r iv-display, fig.height=5, fig.width=8, results='hide'}
-# Run the IV analysis on your dataset
-iv_results <- run_iv_analysis(data_analysis)
-# Make sure all visualization objects are available (hide the TRUE output)
-invisible(create_iv_visualizations())
-```
+## Principal Component Analysis
 
-```{r iv-summary-table, fig.width=6}
-# Format the summary table to fit better
-iv_summary_table %>%
-  kable_styling(font_size = 8, latex_options = "scale_down")
-```
-
-```{r iv-plots, fig.height=9, fig.width=8}
-# Arrange plots in a grid with appropriate sizing
-grid.arrange(
-  iv_comparison_plot + theme(plot.margin = margin(0.1, 0.1, 0.5, 0.1, "cm")),
-  iv_pct_diff_plot + theme(plot.margin = margin(0.5, 0.1, 0.1, 0.1, "cm")),
-  ncol = 1,
-  heights = c(1.3, 1)
-)
-```
-
-```{r comparison-fe-iv}
-iv_pillar_table
-```
-
-## PCA
 
 ```{r}
 pca_results <- run_pca_esg_analysis(
@@ -483,7 +459,6 @@ pca_results <- run_pca_esg_analysis(
 pca_results$visualizations$scree_plot
 ```
 
-\newpage
 
 ```{r pca-loading-plot}
 pca_results$visualizations$loading_plot
@@ -500,3 +475,27 @@ pca_results$visualizations$pc_model_table
 ```{r pca-comparison-table}
 pca_results$visualizations$comparison_table
 ```
+
+
+# Conclusion
+  
+# Appendix
+
+## References
+
+## Tables
+
+```{r variables-table, echo=FALSE}
+source("variables_df.R")
+kable(variables_df, 
+      caption = "Overview of variables", 
+      booktabs = TRUE,
+      longtable = TRUE) %>%
+  kable_styling(latex_options = c("striped", "repeat_header", "hold_position"),
+                font_size = 9) %>%
+  column_spec(1, bold = TRUE, width = "2.5in") %>%
+  column_spec(2, width = "2.5in") %>%
+  column_spec(3, width = "1in")
+```
+
+
