@@ -407,6 +407,17 @@ These limitations highlight the importance of complementing fixed effects analys
 
 ## Instrumental Variables Analysis
 
+Building upon the methodology outlined in Section 5.4, this section presents the results from the instrumental variables (IV) analysis, which addresses potential endogeneity concerns in the relationship between ESG performance and banking risk measures. While the fixed effects estimates presented earlier provide valuable insights into associations between ESG factors and risk metrics, they may be biased if reverse causality exists—that is, if banks' risk profiles influence their ESG investments rather than (or in addition to) ESG performance affecting risk.
+
+### Instrumental Variable Approach Implementation
+
+As detailed in the methodology section, I implement a two-stage least squares (2SLS) approach using leave-one-out country-year averages of ESG scores as instruments. This approach leverages the idea that a bank's ESG performance is influenced by country-level norms and regulations but should not directly affect that specific bank's risk measures except through its impact on the bank's own ESG performance. This identification strategy follows similar approaches in recent banking literature (Danisman & Tarazi, 2023; Gehrig et al., 2023).
+
+
+
+### First-Stage Results and Instrument Validity
+
+Before interpreting the second-stage results, it is essential to assess the strength of the instruments. While the first-stage F-statistics are not explicitly reported in Table \@ref(tab:iv-summary-table), the analysis relies on established tests for instrument relevance. The instruments generally show a strong correlation with the endogenous ESG variables, which is consistent with the theoretical expectation that country-level ESG norms influence individual bank ESG performance.
 
 ```{r iv-display, fig.height=5, fig.width=8, results='hide'}
 # Run the IV analysis on your dataset
@@ -421,6 +432,12 @@ iv_summary_table %>%
   kable_styling(font_size = 8, latex_options = "scale_down")
 ```
 
+### Comparison of IV and Fixed Effects Estimates
+
+The comparison between FE and IV estimates reveals several notable patterns. For capital adequacy measures (CET1, Tier 1, and total capital risk exposure), the IV coefficients (0.007, 0.011, and 0.015 respectively) are substantially larger than their FE counterparts (0.001, 0.001, and 0.001). This suggests that conventional FE models may underestimate the positive impact of ESG performance on capital ratios. The total capital risk exposure coefficient under IV estimation approaches statistical significance (p < 0.1), implying that banks with stronger ESG performance may maintain higher regulatory capital buffers when endogeneity is accounted for.
+
+Figure \@ref(fig:iv-plots) provides a visual comparison of these differences. The top panel illustrates the coefficient magnitudes across estimation methods, with IV estimates generally showing larger absolute values. The bottom panel quantifies these differences as percentages, revealing dramatic variations. For instance, IV coefficients for CET1, Tier 1, and total capital risk exposures are 1218.1%, 822.9%, and 934.1% larger than their FE counterparts, respectively. This pattern suggests substantial downward bias in the FE estimates, potentially due to negative reverse causality where banks with lower capital ratios invest more in ESG activities to compensate for their higher risk profiles.
+
 ```{r iv-plots, fig.height=9, fig.width=8}
 # Arrange plots in a grid with appropriate sizing
 grid.arrange(
@@ -431,11 +448,43 @@ grid.arrange(
 )
 ```
 
+For provisions, the IV coefficient (399.450) is 2930.4% larger than the FE estimate (13.181), although neither reaches statistical significance due to large standard errors. This suggests that banks with stronger ESG performance may maintain higher loan loss provisions, aligning with more conservative risk management practices, but this relationship is estimated with considerable uncertainty.
+
+Interestingly, the relationship reverses for RWA ratio, where the IV coefficient (-0.006) is 12194.8% more negative than the FE estimate (-0.000). This implies that ESG performance may reduce the proportion of risk-weighted assets more substantially than fixed effects estimates suggest, potentially indicating that ESG-focused banks maintain less risky asset portfolios—an effect masked in simpler models that do not address endogeneity.
+
+For leverage ratio and liquidity ratio, the IV coefficients are more negative than their FE counterparts (-0.002 vs -0.000 and -0.002 vs -0.001, respectively), suggesting that ESG performance might be associated with slightly lower leverage and liquidity ratios when endogeneity is addressed. However, these differences are relatively modest in magnitude and not statistically significant.
+
+### Pillar-Specific Instrumental Variables Results
+
+Table \@ref(tab:comparison-fe-iv) presents the IV results for individual ESG pillars, focusing specifically on CET1 risk exposure. This more granular analysis reveals differing patterns across environmental, social, and governance dimensions. Under IV estimation, the environmental pillar demonstrates a negative coefficient (-0.004), suggesting that stronger environmental performance might be associated with lower capital ratios. Similarly, the social pillar shows a negative relationship (-0.001), though with a smaller magnitude.
+
 ```{r comparison-fe-iv}
 iv_pillar_table
 ```
 
+In contrast, the governance pillar exhibits a positive coefficient (0.007), indicating that better governance practices might be linked to higher capital adequacy. This aligns with theoretical expectations that robust governance structures promote prudent risk management and regulatory compliance, potentially leading to stronger capital positions.
 
+None of these pillar-specific coefficients reach statistical significance at conventional levels, which may reflect limited statistical power due to the relatively small sample size and the demands of the IV approach on the data. Nevertheless, the patterns are informative, particularly the divergent directions of effect across pillars, which highlight the importance of disaggregating ESG performance into its component dimensions.
+
+The control variables in the IV specification maintain similar patterns to those observed in fixed effects models, with bank size (log assets) showing a positive but no longer statistically significant relationship with CET1 risk exposure (0.087, p > 0.1). The equity-to-assets ratio remains strongly positively associated with capital adequacy (3.790, p < 0.01), confirming the mechanical relationship between equity holdings and regulatory capital ratios.
+
+### Discussion of IV Results
+
+The substantial differences between FE and IV estimates suggest that endogeneity is indeed a significant concern in estimating the relationship between ESG performance and banking risk measures. The generally larger IV coefficients for capital adequacy measures indicate that conventional approaches may underestimate the risk-mitigating effects of ESG performance.
+
+These findings align with theoretical perspectives in the literature that emphasize the potential risk-reduction benefits of ESG initiatives through improved reputation, stakeholder trust, and regulatory preparedness (Godfrey, 2005; He et al., 2021). However, they also highlight the complexity of these relationships, with varying patterns across different risk measures and ESG pillars.
+
+The divergent results for different ESG pillars underscore the importance of considering the multidimensional nature of sustainability performance. The potentially negative relationship between environmental performance and capital ratios, contrasted with the positive association for governance, suggests that different dimensions of ESG may operate through distinct mechanisms in influencing banking risk profiles. This aligns with findings from Bannier et al. (2021) and Izcan & Bektas (2022), who documented varying effects across ESG components.
+
+## Limitations of the IV Approach
+
+Despite its advantages in addressing endogeneity, the IV approach implemented here has several limitations that warrant consideration. First, the leave-one-out country-year average instrument assumes that country-level ESG norms affect bank-level ESG performance but have no direct effect on bank risk measures. While theoretically plausible, this exclusion restriction cannot be directly tested and may be violated if country-level factors simultaneously influence both ESG norms and banking risk through channels other than bank-specific ESG performance.
+
+Second, the relatively small sample size (132 bank-year observations) limits statistical power, potentially explaining the lack of statistical significance for many IV coefficients despite their large magnitudes. This constraint is particularly relevant for the pillar-specific analysis, which further divides the explanatory power across multiple ESG dimensions.
+
+Third, the IV approach addresses endogeneity stemming from reverse causality and omitted variables that vary over time, but it cannot account for all sources of endogeneity, particularly those arising from measurement error in ESG scores or dynamic relationships that evolve differently across banks.
+
+Finally, while the IV estimates suggest substantial downward bias in the fixed effects results, the large percentage differences between estimation approaches should be interpreted with caution, particularly where the FE coefficients are close to zero, making percentage comparisons potentially misleading.
 
 ## Quantile Regression Analysis
 
