@@ -94,10 +94,8 @@ invisible(create_iv_visualizations())
 </div>
 
 <div>
-```{r, fig.height=3.0, fig.width=5.0}
-time_trend_plot <- generate_time_trend_plots(data_analysis, 
-                                       c("esg_score", "cet1_risk_exposure"))
-print(time_trend_plot)
+```{r, fig.height=5.5, fig.width=7.5}
+knitr::include_graphics("esg_pillars.png")
 ```
 </div>
 </div>
@@ -109,14 +107,12 @@ print(time_trend_plot)
 1. **Fixed Effects Panel Models** 
    - Controls for bank/time unobserved heterogeneity
    - Tests for non-linear relationships (quadratic terms)
-   - State-of-the-art approach in ESG-banking literature
 
-2. **Quantile Regression** <span style="color: #1a73e8;">→ Key innovation</span>
+2. **Quantile Regression**
    - Reveals heterogeneous effects across risk distribution
    - First application to ESG-banking regulatory metrics
 
 3. **Instrumental Variables (IV)**
-   - Addresses causal identification challenges
    - Uses country-year ESG averages as instruments
 </div>
 
@@ -125,17 +121,13 @@ print(time_trend_plot)
    - Extracts latent ESG dimensions beyond traditional pillars
    - Resolves multicollinearity in ESG components
 
-**Scientific Advancement:**
-- First study to triangulate methods on same dataset
-- Addresses four key methodological challenges:
-  1. Unobserved heterogeneity
-  2. Effect heterogeneity across risk distribution
-  3. Endogeneity/reverse causality
-  4. ESG dimensionality beyond E-S-G pillars
+**Scientific Advancement:** Addresses four key methodological challenges:
 
-**Analytical Efficiency:**
-- Optimizes statistical power with 132 observations
-- Balances complexity with robust inference
+  1. Unobserved heterogeneity across risk distribution
+  2. Endogeneity/reverse causality
+  3. ESG dimensionality beyond E-S-G pillars
+  4. Regulatory data as source
+
 </div>
 </div>
 
@@ -165,53 +157,34 @@ kable(simplified_table, format = "html", escape = FALSE,
 <div style="padding-top: 20px;">
 **Key Findings:**
 
-- Linear specification reveals modest ESG-risk relationship
+- Linear specification reveals *insignificant* ESG-risk relationship
+
   - Positive but statistically insignificant coefficients
   - Contrasts with market-based measure studies
 
 - **Scientific Insight:** Linear models potentially mask:
+
   1. Non-linear effects
   2. Heterogeneous relationships across risk distribution
-  3. Endogeneity dynamics
 
-- **Methodological Implication:** 
-  Need for complementary analytical approaches
 </div>
 </div>
 
 ## ESG Pillar-Level Findings {.flexbox .vcenter}
 
-<div class="columns-2">
-<div>
-```{r}
-# Create a simpler visual representation without complex ggplot
-# Display just the coefficients in a table format
-pillar_data <- data.frame(
-  Pillar = c("Environmental", "Social", "Governance"),
-  Coefficient = c(-0.006, 0.027, -0.003),
-  SE = c(0.004, 0.008, 0.002),
-  Significance = c("ns", "**", "†")
-)
-
-kable(pillar_data, format = "html", caption = "Pillar Effects on CET1 Risk Exposure") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
-               font_size = 14) %>%
-  row_spec(2, bold = TRUE, background = "#f0f7ff") %>%
-  column_spec(1, width = "150px")
-```
-</div>
-
 <div style="padding-top: 20px;">
-**Novel Findings:**
 
 - **Pillar decomposition reveals distinct effects:**
+
   - **Social pillar:** Strong positive association with capital adequacy (0.027**)
   - **Environmental pillar:** Negative but non-significant effect (-0.006)
   - **Governance pillar:** Marginally negative effect (-0.003†)
 
 - **Non-linear dynamics detected:**
+
   - Inverted U-shaped relationship for Social pillar
   - Significant quadratic terms indicate diminishing returns
+  
 </div>
 </div>
 
@@ -237,16 +210,18 @@ kable(quantile_data, format = "html",
 </div>
 
 <div style="padding-top: 20px;">
-**Methodological Innovation:**
 
 - **First application of quantile regression to ESG-banking risk**
+
   - Reveals heterogeneous effects masked by mean-based models
   - Coefficient for 10th percentile (-0.004*) twice that of 90th (-0.002)
 
 - **Key Scientific Findings:**
+
   - Stronger negative ESG effect for banks with lower capital ratios
   - Most significant impact at median quantile (-0.003***)
   - Statistical significance diminishes for high-quantile banks
+  
 </div>
 </div>
 
@@ -272,7 +247,6 @@ kable(social_data, format = "html",
 </div>
 
 <div style="padding-top: 20px;">
-**Novel Pattern Discovery:**
 
 - **Social pillar emerges as key risk driver**
   - Consistently negative effect on capital risk across all quantiles
@@ -286,7 +260,7 @@ kable(social_data, format = "html",
 </div>
 </div>
 
-## PCA Results: Revealing ESG Dimensionality {.flexbox .vcenter}
+## PCA Results {.flexbox .vcenter}
 
 <div class="columns-2">
 <div>
@@ -308,6 +282,7 @@ kable(pca_data, format = "html",
 
 <div style="background-color: #f8f8f8; padding: 10px; border-radius: 5px;">
 **Component Interpretation:**
+
   - **PC1 (46.2%):** General ESG quality factor
   - **PC2 (13.8%):** Social responsibility vs. environmental focus
   - **PC3 (10.2%):** External stakeholder vs. internal governance
@@ -315,7 +290,7 @@ kable(pca_data, format = "html",
   - **PC5 (5.4%):** Emissions vs. Human rights
 
 **Scientific Contribution:**
-  - First study to apply PCA to bank regulatory ESG data
+
   - Reveals complex structure obscured in pillar-based models
   - Explains why aggregate ESG scores may fail to predict risk
 </div>
@@ -330,88 +305,7 @@ pca_results$visualizations$loading_plot
 ```
 
 <div style="font-size: 90%;">
-- **Key insight:** ESG dimensions extend beyond traditional E-S-G pillars
-- Cross-cutting components suggest strategic trade-offs
 - More nuanced structure relevant for understanding risk relationships
-</div>
-
-## IV vs Fixed Effects: Tackling Endogeneity {.flexbox .vcenter}
-
-<div class="columns-2">
-<div>
-```{r}
-# Create a simpler table of IV vs FE results
-iv_data <- data.frame(
-  Measure = c("CET1 Risk", "Tier 1 Risk", "Total Cap Risk", "Leverage"),
-  FE = c(0.001, 0.001, 0.001, -0.000),
-  IV = c(0.007, 0.011, 0.015, -0.002),
-  Difference = c("+600%", "+1000%", "+1400%", "larger")
-)
-
-kable(iv_data, format = "html", 
-      caption = "IV vs Fixed Effects Estimates") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
-               font_size = 14) %>%
-  row_spec(1:3, background = "#e6f7ee") %>%
-  column_spec(1, bold = TRUE) %>%
-  column_spec(4, color = "#006600")
-```
-</div>
-
-<div style="padding-top: 20px; padding-left: 15px;">
-**Causal Identification Innovation:**
-
-- **Novel IV approach using country-year ESG averages**
-  - First application to European banking regulatory data
-  - Creates quasi-experimental research design
-
-- **Substantial Endogeneity Detected:**
-  - IV estimates up to 14x larger than fixed effects
-  - Reveals significant downward bias in conventional estimates
-  - CET1 risk coefficient increases from 0.001 to 0.007
-  
-- **Scientific Contribution:**
-  - Provides stronger evidence for causal ESG→Risk relationship
-  - Challenges reverse causality hypothesis in literature
-</div>
-</div>
-
-## Model Performance Enhancement {.flexbox .vcenter}
-
-<div class="columns-2">
-<div>
-```{r}
-# Create a simpler model comparison table with fewer rows
-model_comp_data <- data.frame(
-  Measure = c("CET1 Risk", "Leverage Ratio", "Provisions Ratio", "RWA Ratio"),
-  Original = c(0.444, 0.364, 0.187, 0.193),
-  PCA = c(0.447, 0.391, 0.211, 0.219),
-  Improvement = c(0.003, 0.027, 0.024, 0.026)
-)
-
-# Display simpler table
-kable(model_comp_data, format = "html", digits = 3) %>%
-  kable_styling(bootstrap_options = c("striped", "hover"),
-               full_width = FALSE, font_size = 14) %>%
-  column_spec(1, bold = TRUE) %>%
-  row_spec(2, background = "#e6fff2") %>%
-  row_spec(4, background = "#e6fff2")
-```
-</div>
-
-<div style="padding-top: 20px;">
-**Methodological Implications:**
-
-- **PCA models consistently outperform traditional specifications**
-  - Demonstrates value of dimensionality reduction in ESG research
-  - Strongest improvements for leverage ratio (+0.027)
-  - Substantial gains for provisions ratio (+0.024)
-
-- **Scientific Contribution:**
-  - Empirical evidence that ESG structure matters for risk modeling
-  - Novel methodological approach for ESG-risk studies
-  - Addresses multicollinearity issues in ESG research
-</div>
 </div>
 
 ## Key Data Science Insights {.flexbox .vcenter}
@@ -419,20 +313,24 @@ kable(model_comp_data, format = "html", digits = 3) %>%
 <div class="columns-2">
 <div style="background-color: #f0f7ff; padding: 10px; border-radius: 5px;">
 **Complex relationships require multiple approaches**
+
 - No single method provides complete picture
 - Triangulation yields more robust inference
 
 **Quantile regression reveals heterogeneity**
+
 - Mean-based models mask differential effects
 - Distribution-wide perspective essential
 </div>
 
 <div style="background-color: #f8f8f8; padding: 10px; border-radius: 5px;">
 **Dimensionality reduction improves modeling**
+
 - Enhanced explanatory power
 - Reveals underlying ESG structure beyond traditional pillars
 
 **Endogeneity matters substantively**
+
 - Conventional estimates likely biased
 - Direction of causality requires careful identification
 </div>
@@ -449,10 +347,10 @@ kable(model_comp_data, format = "html", digits = 3) %>%
    - PCA uncovers latent ESG dimensions beyond E-S-G pillars
    - Quantile regression identifies heterogeneous effects across risk distribution
 
-2. **Novel Empirical Findings:**
+2. **Empirical Findings:**
    - Social pillar most strongly associated with capital adequacy
    - Non-linear relationships suggest diminishing returns to ESG investments
-   - ESG effects stronger for banks with moderate capital buffers
+
 </div>
 
 <div style="background-color: #f8f8f8; padding: 10px; border-radius: 5px; font-size: 90%;">
@@ -468,9 +366,6 @@ kable(model_comp_data, format = "html", digits = 3) %>%
   - Incorporation of EU Taxonomy alignment metrics
   - High-frequency ESG controversy monitoring
 
-- **Regulatory Applications:**
-  - Development of ESG-augmented early warning systems
-  - Calibration of ESG risk weights in capital requirements
 </div>
 </div>
 
@@ -487,9 +382,4 @@ Key Insight: ESG-Risk Relationship is Complex and Multidimensional
   <li>✓ PCA reveals hidden ESG dimensions beyond traditional pillars</li>
   <li>✓ Multi-method approach critical for accurate assessment</li>
 </ul>
-</div>
-
-<div style="margin-top: 30px; font-style: italic; font-size: 18px;">
-Contact: m.c.p.dehaan@students.uu.nl
-</div>
 </div>
