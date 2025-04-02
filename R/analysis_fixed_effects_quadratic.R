@@ -181,7 +181,7 @@ pillar_models_extracted <- lapply(pillar_models, extract_custom)
 # Create the ESG score model table with custom formatting for p < 0.1
 ms_esg_table <- modelsummary(
   esg_models,
-  title = "Table 1: Effects of Overall ESG Score on Bank Risk Measures",
+  title = "Effects of Overall ESG Score on Bank Risk Measures",
   stars = c('†' = 0.1, '*' = 0.05, '**' = 0.01, '***' = 0.001),
   gof_map = gof_map,
   coef_map = coef_map_esg,
@@ -207,7 +207,7 @@ ms_esg_table <- modelsummary(
 # Create the ESG pillar score model table
 ms_pillar_table <- modelsummary(
   pillar_models,
-  title = "Table 2: Effects of ESG Pillar Scores on Bank Risk Measures",
+  title = "Effects of ESG Pillar Scores on Bank Risk Measures",
   stars = c('†' = 0.1, '*' = 0.05, '**' = 0.01, '***' = 0.001),
   gof_map = gof_map,
   coef_map = coef_map_pillars,

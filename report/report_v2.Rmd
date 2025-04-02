@@ -1,10 +1,10 @@
 ---
-title: "ESG and banking risk"
+title: "European ESG Performance and Banking Risk"
 author: "Maurits de Haan (s8161658, m.c.p.dehaan@students.uu.nl)"
 date: | 
   | 3rd of April, 2025
-  | Course: Data Science Lab (ECB3DSL), Academic year 2024/2025
   | Individual internship for FNO Zorg voor Kansen
+  | Course: Data Science Lab (ECB3DSL), Academic year 2024/2025
   | Supervisor: Dr. Ulrich Zierahn-Weilage
   | Word Count: XXXX (max 5000)
 output:
@@ -43,8 +43,8 @@ library(tidyr)
 library(kableExtra)
 library(ggplot2)
 library(patchwork)
-library(modelsummary) # Already used in your example
-library(broom)        # Already used in your example
+library(modelsummary)
+library(broom)
 library(knitr)
 library(kableExtra)
 
@@ -61,7 +61,10 @@ sink()
 ```
 
 # Abstract {.unnumbered}
-[write here]
+
+This study investigates the relationship between Environmental, Social, and Governance (ESG) performance and banking risk for European banks from 2020 to 2023. Using regulatory data from the European Banking Authority combined with ESG scores from LSEG Refinitiv, I employ complementary methodological approaches including panel data techniques with two-way fixed effects, quantile regression, and principal component analysis. The results reveal several important insights. First, while the overall ESG score shows limited association with risk metrics in fixed effects specifications, disaggregation into component pillars uncovers substantial heterogeneity in their effects. The social pillar consistently emerges as the most influential ESG dimension, exhibiting significant positive relationships with capital adequacy measures characterized by inverted U-shaped patterns. Second, quantile regression analysis demonstrates that ESG effects vary significantly across the risk distribution, with the strongest impact for banks in the lower to middle quantiles. Third, principal component analysis identifies underlying structures of ESG performance that extend beyond traditional environmental, social, and governance categorizations, suggesting strategic choices in sustainability approaches with different implications for bank risk profiles. These findings contribute to understanding how ESG factors influence banking stability and have implications for integrating sustainability considerations into both risk management practices and regulatory frameworks while acknowledging complex trade-offs between different ESG dimensions.
+
+\newpage
 
 | Statements |
 |------------------------------|
@@ -72,8 +75,8 @@ sink()
 |------------------------------|
 | **Disclosure Statement** |
 | In this project, I have made use of the following Generative AI tools: ChatGPT 4o (reasoning), Claude 3.5 Sonnet (coding) |
-| ChatGPT 4o was used to help with reasoning about the methodology that would be usefull to use and the way in which this can be implemented. It was used as an extension of my own knowledge and as an external check on the assumptions I made about certain methodologies. Claude 3.5 Sonnet was utilised for certain coding tasks, mostly when it was outside of the scope of what I have learned earlier. All code that was provided by the model was thouroughly checked and validated if it was actully true (and in most cases I had to rewrite it completely). Next to that, Claude was used to integrate some functions in the code that I wrote. Claude was also used to help with for example a .tex file to include the image in the header of this file and other "nice-to-have" things. |
-| All content in this report was written by myself and not by ChatGPT. Most was first written by hand and then typed in RStudio. | 
+| ChatGPT 4o was used to help with reasoning about the application of the methodology that would be usefull to use and the way in which this can be implemented. It was used as an extension of my own knowledge and as an external check on the assumptions I made about certain methodologies. Claude 3.5 Sonnet was utilised for certain coding tasks, mostly when it was outside of the scope of what I have learned earlier. All code that was provided by the model was thouroughly checked and validated if it was actully true (and in most cases I had to rewrite it completely). Next to that, Claude was used to integrate some functions in the code that I wrote. Claude was also used to help with for example a .tex and .css file to include the image in the header of this file and other "nice-to-have" things. |
+| All content in this report was written by myself and not by a GenAI tool. Most, was first written by hand and then typed in RStudio. | 
 |------------------------------|
 | **Signature**
 | |
@@ -86,15 +89,22 @@ sink()
 
 # Introduction
 
+\begin{wrapfigure}{r}{0.5\textwidth}
+  \centering
+  \includegraphics[width=0.48\textwidth]{esg_structure.png}
+  \caption{ESG Structure with Pillars and Components}
+  \label{fig:esg-structure}
+\end{wrapfigure}
+
 In recent years, the role of environmental, social, and governance (ESG)  considerations in banking has gained significant attention in both academic and policy fields. Growing concerns about climate change, inequality and good governance have increased the interest how corporations and banks through their lending decision can drive the transition to a more sustainable and equitable economy (Carnevale & Drago, 2024; European Banking Authority, 2018; EU, 2014). Many banks across Europe are subject to Pillar 3 disclosures under the Capital Requirements Regulation (CRR), and new ESG disclosures further highlight climate and sustainability exposures (De Barros Fritz & Gentile, 2024). Policymakers and financial experts argue that improved ESG performance may help banks reduce their overall risk exposure, particularly by enhancing their reputation, improving stakeholder trust, and anticipating regulatory changes. However, whether ESG practices truly mitigate banking risk or whether lower-risk institutions merely find it easier to allocate resources toward socially responsible projects remains an open empirical question. This paper contributes to this debate by focusing on capital adequacy which reflects banking risk and using regulatory data instead of annual reports. In this paper, the relationship between ESG performance and capital ratios for European banks from 2020 to 2023 is analysed.
 
-From a societal perspective, understanding whether strong ESG engagement leads to more resilient financial institutions carries high relevance. If banks with robust ESG strategies exhibit lower risk, this supports integrating ESG considerations into prudential regulation and highlights banks’ capacity to contribute to broader societal objectives without jeopardizing their stability. Conversely, if safer banks are simply better able to “afford” ESG investments, this suggests a different policy focus (e.g. financial health determines ESG commitments needed to be made). From a scientific standpoint, this study adds nuance to a growing literature that often uses conventional balance-sheet data to proxy risk, which may not fully capture regulatory metrics. By leveraging publicly available data from the European Banking Authority (EBA) , we gain a more reliable view of risk-weighted assets, Tier 1 capital, leverage, and provision levels. Pairing these risk metrics with granular ESG data from LSEG Refinitiv further strengthens the empirical inquiry, because the ESG scores (and their component pillars) benefit from refined post-2019 methodologies.
+From a societal perspective, understanding whether strong ESG engagement leads to more resilient financial institutions carries high relevance. If banks with robust ESG strategies exhibit lower risk, this supports integrating ESG considerations into prudential regulation and highlights banks’ capacity to contribute to broader societal objectives without jeopardizing their stability. Conversely, if safer banks are simply better able to “afford” ESG investments, this suggests a different policy focus (e.g. financial health determines ESG commitments needed to be made). From a scientific standpoint, this study adds nuance to a growing literature that often uses conventional balance-sheet data to proxy risk, which may not fully capture regulatory metrics. By leveraging publicly available data from the European Banking Authority (EBA), a more reliable view of risk-weighted assets, Tier 1 capital, leverage, and provision levels is gained. Pairing these risk metrics with granular ESG data from LSEG Refinitiv further strengthens the empirical inquiry, because the ESG scores (and their component pillars) benefit from refined post-2019 methodologies.
 
-Based on the financial and ESG dataset, this paper employs a panel-data approach that exploits the ‘short-longitudinal’ structure of our dataset, comprising approximately 100 unique Eurozone banks, covering over 400 bank-year observations between 2020 and 2023. Fixed effects models allow us to control for unobserved heterogeneity at both the bank and time level, reducing omitted-variable bias. We further investigate potential non-linear effects by adding squared ESG terms, conduct lagged analyses to explore dynamic responses between ESG changes and future banking risk, and test for heterogeneous effects with quantile regressions. Finally, a principal component analysis on ESG sub-scores (see Figure X) provides an alternative way to capture the underlying dimensions of ESG and investigate their separate impacts on various risk metrics.
+This paper employs complementary methodological approaches to address the relationship between ESG performance and banking risk. Leveraging panel data techniques with two-way fixed effects, I account for unobserved heterogeneity while exploring potential non-linear relationships through quadratic specifications. To examine the heterogeneity of effects across different risk profiles, I implement quantile regression analysis, which reveals how ESG factors influence banks at various points in the risk distribution. Additionally, Principal Component Analysis (PCA) is applied to address multicollinearity concerns and uncover the underlying structure of ESG dimensions beyond the traditional pillar categorization.
 
-A brief overview of my main findings indicates the following patterns. First, in a baseline fixed-effects analysis pooling all banks, the overall ESG score shows only a modest and sometimes statistically insignificant relationship with CET1, Tier 1, and total capital ratios when using conventional robust standard errors. However, once we employ Driscoll-Kraay corrections (which account for cross-sectional dependence), a positive and significant effect emerges between ESG performance and CET1 ratios. Furthermore, restricting attention to banks with complete data over the four-year period yields stronger evidence of a beneficial ESG effect on capital adequacy. Decomposing ESG into its environmental, social, and governance pillars suggests that governance, and in some cases social-related strategies (such as corporate social responsibility), may drive much of the observed relationship—albeit with varying signs and significance across different specifications. Extended analyses (including quantile regressions and principal component analysis) reveal that individual components, particularly governance- and CSR-related dimensions, tend to be most strongly associated with capital adequacy measures.
+The empirical results reveal several important insights. First, the overall ESG score shows a more nuanced relationship with risk metrics than previously documented in the literature. Second, disaggregating ESG into its constituent pillars uncovers substantial heterogeneity in their effects, with the social pillar demonstrating the strongest and most consistent association with capital adequacy measures. Third, these relationships vary significantly across the risk distribution, with more pronounced effects for banks in the middle quantiles. Finally, the PCA results suggest that distinct underlying dimensions of ESG performance exist beyond the conventional environmental, social, and governance categorization, each exhibiting different relationships with banking risk measures.
 
-[conclusion of Intro]
+The remainder of this paper is structured as follows. Section 2 reviews the relevant literature on ESG performance and banking risk. Section 3 describes the data sources and variable construction. Section 4 provides descriptive statistics and preliminary analyses. Section 5 outlines the methodological approaches in detail. Section 6 presents and discusses the empirical results. Sections 7 concludes. 
 
 # Literature Review
 
@@ -102,33 +112,31 @@ The growing incorporation of environmental, social, and governance (ESG) conside
 
 ## ESG and firm capital
 
-Fundamental papers often focus on corporate bond markets, demonstrating that firms with stronger ESG profiles benefit from lower cost of debt and better credit ratings. For instance, Apergis et al. (2022) report that lower ESG ratings tend to increase the default risk premium charged by investors, thus suggesting that ESG factors influence the pricing of unsecured corporate debt.
+First, the fundamental papers look at the corporate side, demonstrating that firms with stronger ESG profiles benefit from lower cost of debt and better credit ratings. For instance, Apergis et al. (2022) report that lower ESG ratings tend to increase the default risk premium charged by debtholders, thus suggesting that ESG factors influence the pricing of unsecured corporate debt.
 
 Further connections between ESG metrics and cost of capital have been explored by Chava (2014), who finds that firms who are involved in many environmental controvocies are penalized with higher equity and debt costs. While the magnitude of this penalty varies across subcomponents of ESG, it does suggest that, overall, markets incorporate sustainability signals into the required returns on capital. Yet, other scholars remain more cautious about conclusive results. Menz (2010), studying European corporate bonds, finds no strong link between corporate social responsibility (CSR) and secondary market credit spreads, an outcome possibly attributed to the incomplete integration of ESG in bond pricing at the time. Similarly, Amiraslani et al. (2017) observe that the positive effect of strong social capital emerges primarily in times of crisis, such as during the 2008–2009 financial turmoil, when trust and default risk dominate market concerns. They show that high-social-capital firms could secure funding at lower costs during the height of the crisis but found no pronounced link between social capital and bond spreads in more stable years.
 
-In parallel with bond-market research, work on the relationship between ESG factors and bank loan pricing has grown. Goss and Roberts (2010) detail how banks acquire additional information from corporate ESG ratings, which translates to higher loan spreads on firms with CSR concerns. Banks effectively penalize borrowers with shortcoming ESG profiles unless those loans are well secured (Goss & Roberts, 2010). Subsequent reviews corroborate that higher ESG risk can lead to elevated bank lending costs (Carnevale & Drago, 2024). However, while evidence of this ESG “penalty” is common, differences often arise across ESG pillars, with governance sometimes playing a more substantial role in lowering perceived borrower risk.
+Work on the relationship between ESG factors and bank loan pricing has grown. Goss and Roberts (2010) detail how banks acquire additional information from corporate ESG ratings, which translates to higher loan spreads on firms with CSR concerns. Banks effectively penalize borrowers with shortcoming ESG profiles unless those loans are well secured. Subsequent reviews corroborate that higher ESG risk can lead to elevated bank lending costs (Carnevale & Drago, 2024). However, while evidence of this ESG “penalty” is common, differences often arise across ESG pillars, with governance sometimes playing a more substantial role in lowering perceived borrower risk.
 
-## ESG and banking lending 
+## ESG and lending by banks
 
-A parallel literature narrows its scope to banks themselves, examining whether ESG performance among banking institutions correlates with risk proxies such as default risk, nonperforming loans, tail risk, and market-based measures of capital adequacy. Curcio et al. (2024), for instance, use a sample of European banks and insurers to show that stronger ESG performance in nonfinancial counterparties reduces banks’ overall systemic risk exposure, albeit with nuanced differences when environmental and social facets are considered separately. This finding aligns with broader arguments that strong ESG engagement can enhance reputational capital, trustworthiness, and stakeholder relationships, all of which mitigate operational and credit risk [SOURCE].
+A parallel literature narrows its scope to banks themselves, examining whether ESG performance among banking institutions correlates with risk proxies such as default risk, nonperforming loans, tail risk, and market-based measures of capital adequacy. Curcio et al. (2024), for instance, use a sample of European banks and insurers to show that stronger ESG performance in nonfinancial counterparties reduces banks’ overall systemic risk exposure, albeit with nuanced differences when environmental and social facets are considered separately. 
 
-Empirical efforts to measure direct effects of ESG on bank-specific outcomes often rely on risk-weighted capital ratios or default probability metrics. Several papers employ Merton-style distance to default or Z-scores to capture how ESG performance might reduce a bank’s vulnerability to extreme negative shocks (Chiaramonte et al., 2022; Danisman & Tarazi, 2023). The emerging consensus suggests that ESG considerations relate meaningfully to bank resilience. However, it remains unclear how the pathways are caused (e.g. via lower loan losses, improved reputational capital, or heightened stakeholder trust) (Gehrig et al., 2023). There is also extensive research focusing on operational risk: Galletta et al. (2022) document that higher ESG scores consistently reduce banks’ operational loss events, reflecting lower reputational and compliance risk. Indeed, ESG issues can directly affect operational strategies, especially during evolving regulatory standards and public scrutiny of sustainability issues.
+Empirical efforts to measure direct effects of ESG on bank-specific outcomes often rely on risk-weighted capital ratios or default probability metrics. Several papers employ Merton-style distance to default or Z-scores to capture how ESG performance might reduce a bank’s vulnerability to extreme negative shocks (Chiaramonte et al., 2022; Danisman & Tarazi, 2023). The emerging consensus suggests that ESG considerations relate meaningfully to bank resilience. However, it remains unclear how the pathways are caused (e.g. via lower loan losses, improved reputational capital, or heightened stakeholder trust) (Gehrig et al., 2023). There is also extensive research focusing on operational risk: Galletta et al. (2022) document that higher ESG scores consistently reduce banks’ operational loss events, reflecting lower reputational and compliance risk. 
 
-Despite a shared recognition that sustainability dimensions matter for financial risk of banks, important theoretical and empirical debates persist if this relationship can be identified as causal. One strand, often related to stakeholder theory, proposes that deliberate ESG initiatives improve a bank’s reputation, stakeholder satisfaction, and regulatory preparedness (Godfrey, 2005; He et al., 2021). Consequently, these banks have stronger buffers against unforeseen market stresses, which may translate into stronger capital ratios or lower cost of funding. Another line of inquiry, however, posits that less risky institutions simply have the resources and latitude to engage in more robust ESG activities (Bouslah et al., 2013; Cornett et al., 2016). In that scenario, risk is arguably a precursor, rather than an outcome, of sustainability engagement. Studies such as Gehrig et al. (2023) and Danisman and Tarazi (2023) attempt to mitigate such endogeneity and simultaneity concerns by using instrumental variables or dynamic panel methodologies. 
+Despite a shared recognition that sustainability dimensions matter for financial risk of banks, important theoretical and empirical debates persist if this relationship can be identified as causal. One strand, often related to stakeholder theory, proposes that deliberate ESG initiatives improve a bank’s reputation, stakeholder satisfaction, and regulatory preparedness (Godfrey, 2005; He et al., 2021). Consequently, these banks have stronger buffers against unforeseen market stresses, which may translate into stronger capital ratios or lower cost of funding. Another line of inquiry posits that less risky institutions simply have the resources and latitude to engage in more robust ESG activities (Bouslah et al., 2013; Cornett et al., 2016). In that scenario, risk is arguably a precursor, rather than an outcome, of sustainability engagement. Studies such as Gehrig et al. (2023) and Danisman and Tarazi (2023) attempt to mitigate such endogeneity and simultaneity concerns by using instrumental variables or dynamic panel methodologies. 
 
-## ESG Pillar scores
+## ESG Pillar scores and lending by banks
 
-Researchers have further highlighted that different ESG pillars do not necessarily exert uniform effects on a bank’s capital adequacy. The governance dimension, for instance, has repeatedly been identified as a strong predictor of stability because it reflects managerial skill, board structure, and the capacity to address emerging sustainability concerns systematically (Chodnicka-Jaworska, 2021; Cohen, 2023). Environmental scores may be particularly relevant for banks exposed to climate-sensitive sectors, while the social dimension exhibits more mixed results [SOURCE]. For example, some studies show minimal or inconsistent links between social scores and measures such as credit spreads or default risks (Amiraslani et al., 2017; Izcan & Bektas, 2022), whereas others find that employee relations and community engagements can bolster goodwill and mitigate downside risk in stress periods (Ashwin Kumar et al., 2016).
-
-Overall, the literature indicates that ESG has become a critical component in assessing and shaping banks’ risk profiles. Heightened stakeholder, regulatory, and market pressures ensure that ESG considerations pervade more areas of banking strategy, including the allocation of capital and management of risk-weighted assets. While a growing number of studies point to ESG factors lowering the likelihood of severe capital depletion, conclusive evidence about directionality and pillar-specificity remains somewhat inconclusive. 
+Researchers have further highlighted that different ESG pillars do not necessarily exert uniform effects on a bank’s capital adequacy. The governance dimension, for instance, has repeatedly been identified as a strong predictor of stability because it reflects managerial skill, board structure, and the capacity to address emerging sustainability concerns systematically (Chodnicka-Jaworska, 2021; Cohen, 2023). Environmental scores may be particularly relevant for banks exposed to climate-sensitive sectors. For example, some studies show minimal or inconsistent links between social scores and measures such as credit spreads or default risks (Amiraslani et al., 2017; Izcan & Bektas, 2022), whereas others find that employee relations and community engagements can bolster goodwill and mitigate downside risk in stress periods (Ashwin Kumar et al., 2016).
 
 # Data 
 
-The dataset employed in this study combines two sources of bank-level information for EBA member countries: regulatory bank data and ESG data. This paper focusses on European banks that are a member of the regulatory institution the European Banking Authority (EBA). The member countries include all Eurozone counties, apart from Croatia and Slovakia, non-Eurozone countries that are transitioning to adopting the euro (Bulgaria, Hungary, Poland, Romania and Sweden), Denmark (opt-out for Eurozone participation). Next to that, the EBA also has some non-EU countries as members, such as Norway, Iceland and Liechtenstein.  These countries are all included in the initial data-gathering. For all countries, the included banks are those with their headquarter in that country. 
+The dataset employed in this study combines two sources of bank-level information for EBA member countries: regulatory bank data and ESG data. This paper focusses on European banks that are a member of the regulatory institution the European Banking Authority (EBA). The member countries include all Eurozone counties, apart from Croatia and Slovakia, non-Eurozone countries that are transitioning to adopting the euro (Bulgaria, Hungary, Poland, Romania and Sweden) and Denmark (opt-out for Eurozone participation). Next to that, the EBA also has some non-EU countries as members, such as Norway, Iceland and Liechtenstein. These countries are all included in the initial data-gathering. For all countries, the included banks are those with their headquarter in that country. 
 
 ## Regulatory bank data
 
-For the regulatory financial data, the EBA data from the EU-Wide Transparency Exercise is used. This is validated date by banks and EU supervisors (official regarded to as "Historical KM"). The total EBA dataset include 100 banks, with a total of 400 bank-year observations. The data is available from the third quarter of 2019 onwards to the third quarter of 2024. Since the ESG data is in full years, only the data from 2020 to 2023 is used and the yearly values are calculated. This data contains standardized regulatory metrics for Eurozone banks, including, among others, total assets, total equity, loan and advance amounts, provisions, and various capital ratios. Originally the data contained over 12,000 observations, since each bank's financial metric was recorded as a separate observation. The data was therefore pivoted wider, so that a more structures and easier to merge dataset originates. Each financial variable now has its own column. Next to that, several financial ratios were calculated, for example the equity to assets, loan to assets and provision ratio. All variables in the dataset can be found in \@ref(tab:variables-table) in the appendix. 
+For the regulatory financial data, the EBA data from the EU-Wide Transparency Exercise is used. This is validated date by banks and EU supervisors  (regarded to as "Historical KM"). The data is available from the third quarter of 2019 to the third quarter of 2024. Since the ESG data is in full years, only the data from 2020 to 2023 is used and the yearly values are calculated. This data contains standardized regulatory metrics for Eurozone banks, including, among others, total assets, total equity, loan and advance amounts, provisions, and various capital ratios. Originally the data contained over 12,000 observations, since each bank's financial metric was recorded as a separate observation. The data was therefore pivoted wider, so that a more structures and easier to merge dataset originates. Each financial variable now has its own column. Next to that, several financial ratios were calculated, for example the equity to assets, loan to assets and provision ratio. All variables in the dataset can be found in \@ref(tab:variables-table) in the appendix. 
 
 ## ESG data
 
@@ -138,27 +146,23 @@ During the data retrieving process, first all public and private companies were 
 
 ## Merging 
 
-The merged dataset was constructed by performing an inner join between the regulatory data (EBA) and ESG data (Refinitiv). This merging approach ensured that only banks and years appearing in both datasets are retained for the final analytical sample. This ensures that each record in the final dataset contains both the regulatory capital and risk information and the ESG performance indicators for a given institution-year observation. The two datasets were merged on the bank name and the year. Since the bank names differ between the two datasets, the Legal Entity Identifier (LEI) was used to merge the datasets. 
+The merged dataset was constructed by performing an inner join between the regulatory data (EBA) and ESG data (Refinitiv). This merging approach ensured that only banks and years appearing in both datasets are retained for the final analytical sample. This ensures that each record in the final dataset contains both the regulatory capital and risk information and the ESG performance indicators for a given institution-year observation. Since the bank names differ between the two datasets, the Legal Entity Identifier (LEI) was used to merge the datasets. 
 
 # Descriptive Analyses
 
-This section provides an overview of the data used in the analysis, covering the period 2020-2023 for approximately 100 European banks in the EBA dataset. It presents descriptive statistics for the main variables of interest, examines their correlations, and illustrates their distributions and trends over time.
+This section provides an overview of the data used in the analysis. It presents descriptive statistics for the main variables of interest, examines their correlations, and illustrates their distributions and trends over time.
 
 ## Summary Statistics
 
-Table \@ref(tab:summary-stats) presents descriptive statistics for the primary variables of interest. Our sample consists of 132 bank-year observations across the four-year period. The ESG scores exhibit considerable variation, with the overall ESG score averaging 73.32 (on a scale of 0-100, with the higher the better) and a standard deviation of 11.95 (so the majority tend to cluster around the average). Among the three ESG pillars, banks perform strongest in environmental metrics (mean = 85.98), followed by social (75.36) and governance (68.62). This pattern reflects the European banking sector's significant emphasis on environmental priorities in recent years, likely driven by EU policy initiatives such as the European Green Deal and the EU Taxonomy Regulation.
+Table \@ref(tab:summary-stats) presents descriptive statistics for the primary variables of interest. The sample consists of 132 bank-year observations across the four-year period. The ESG scores exhibit considerable variation, with the overall ESG score averaging 73.32 (on a scale of 0-100, with the higher the better) and a standard deviation of 11.95 (so the majority tend to cluster around the average). Among the three ESG pillars, banks perform strongest in environmental metrics (mean = 85.98), followed by social (75.36) and governance (68.62). This pattern reflects the European banking sector's significant emphasis on environmental priorities in recent years, likely driven by EU policy initiatives such as the European Green Deal and the EU Taxonomy Regulation.
 
-The governance pillar displays the highest variability (standard deviation = 18.94), indicating substantial heterogeneity in governance practices across European banks. This variation suggests that while environmental standards have become relatively more harmonized, governance structures and practices remain diverse across institutions.
+Regarding the risk-weighted capital measures, the dataset shows that banks hold, on average, a Common Equity Tier 1 (CET1) risk exposure ratio of 0.60, with Tier 1 and total capital risk exposures standing at 0.67 and 0.76, respectively. These ratios capture how much high-quality capital (e.g., common stock and retained earnings, plus additional Tier 1 or total regulatory capital) a bank maintains relative to its risk-weighted assets. By exceeding regulatory minima, most institutions in the sample signal relatively prudent capital management practices, although the minimum values (ranging from 0.29 to 0.35) reveal that certain banks operate with tighter buffers, potentially reflecting more aggressive asset compositions or narrower margins for absorbing losses.
 
-Regarding the risk-weighted capital measures, the dataset shows that banks hold, on average, a Common Equity Tier 1 (CET1) risk exposure ratio of 0.60, with Tier 1 and total capital risk exposures standing at 0.67 and 0.76, respectively. These ratios capture how much high-quality capital (e.g., common stock and retained earnings, plus additional Tier 1 or total regulatory capital) a bank maintains relative to its risk-weighted assets. By exceeding regulatory minima, most institutions in our sample signal relatively prudent capital management practices, although the minimum values (ranging from 0.29 to 0.35) reveal that certain banks operate with tighter buffers, potentially reflecting more aggressive asset compositions or narrower margins for absorbing losses.
+Provisions, which represent funds set aside to cover expected credit losses, display substantial variation (standard deviation = 10,001.15), possibly reflecting differences in bank size, credit risk appetite, and loan portfolio composition. When normalized as a provisions ratio (average = 0.05), these differences remain pronounced (minimum = 0.002, maximum = 0.38), signaling diverse approaches to loan-loss absorption across institutions. The liquidity ratio (mean = 0.15) serves as an indicator of the share of liquid assets available to meet short-term obligations, whereas the risk-weighted assets (RWA) ratio (average = 0.37) measures how much of a bank’s balance sheet is exposed to assets that require regulatory capital based on their riskiness, thus highlighting each bank’s overall risk management strategy.
 
-Turning to the leverage ratio—an unweighted measure of capital adequacy that compares Tier 1 capital against total on- and off-balance-sheet exposures—it averages 0.24 in our sample, with modest dispersion (standard deviation = 0.06). This indicates that while most banks maintain similar levels of Tier 1 capital relative to overall exposure, a minority of institutions deviate significantly in either more or less conservative directions.
+Bank size, as captured by the natural log of total assets (mean = 13.49), underscores the mix of medium-sized and large European banks in the sample, with values ranging from 10.71 to 16.16. Finally, the equity-to-assets ratio averages 0.07, reflecting the industry’s characteristic high reliance on borrowed funds relative to owner’s equity.
 
-Provisions, which represent funds set aside to cover expected credit losses, display substantial variation (standard deviation = 10,001.15), reflecting differences in bank size, credit risk appetite, and loan portfolio composition. When normalized as a provisions ratio (average = 0.05), these differences remain pronounced (minimum = 0.002, maximum = 0.38), signaling diverse approaches to loan-loss absorption across institutions. The liquidity ratio (mean = 0.15) serves as an indicator of the share of liquid assets available to meet short-term obligations, whereas the risk-weighted assets (RWA) ratio (average = 0.37) measures how much of a bank’s balance sheet is exposed to assets that require regulatory capital based on their riskiness, thus highlighting each bank’s overall risk management strategy.
-
-Bank size, as captured by the natural log of total assets (mean = 13.49), underscores the mix of medium-sized and large European banks in our sample, with values ranging from 10.71 to 16.16. Finally, the equity-to-assets ratio averages 0.07, reflecting the industry’s characteristic high reliance on borrowed funds relative to owner’s equity—an attribute of the banking sector that, when paired with other capital and liquidity metrics, plays a crucial role in determining resilience to financial shocks.
-
-```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics of Key Variables."}
+```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics"}
 # Define the variables you want to summarize
 key_vars_summary <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
                       "governance_pillar_score", "cet1_risk_exposure", "tier1_risk_exposure",
@@ -175,14 +179,9 @@ print(summary_table)
 
 ## Correlations
 
-Table \@ref(tab:correlation-matrix) displays the correlation patterns among key variables, revealing several notable relationships. The overall ESG score exhibits strong positive correlations with the social (0.83) and governance (0.85) pillars, and a moderate correlation with the environmental pillar (0.62). This suggests that while all three dimensions contribute to overall ESG ratings, governance and social factors may carry somewhat greater weight in determining overall ESG performance in European banks.
+Table \@ref(tab:correlation-matrix) displays the Pairwise Pearson correlation patterns among key variables, revealing several notable relationships. The overall ESG score exhibits strong positive correlations with the social (0.83) and governance (0.85) pillars, and a moderate correlation with the environmental pillar (0.62). Interestingly, ESG scores show negative correlations with risk metrics: specifically, -0.25 with CET1 risk exposure. This negative relationship, though modest, aligns with the hypothesis that stronger ESG performance may be associated with lower risk levels.
 
-Interestingly, ESG scores show negative correlations with risk metrics: specifically, -0.25 with CET1 risk exposure. This negative relationship, though modest, aligns with the hypothesis that stronger ESG performance may be associated with lower risk levels. However, the direction of causality cannot be inferred from these correlations alone.
-
-The three ESG pillars show different patterns of association with risk metrics. The environmental pillar correlates negatively (-0.11) with CET1 risk exposure, while the social pillar shows a stronger negative relationship (-0.35). Governance displays the weakest correlation with CET1 risk (-0.12). These varying relationships underscore the importance of examining ESG components separately rather than relying solely on aggregate scores.
-Bank size (log assets) demonstrates positive correlations with ESG score (0.50) and environmental pillar score (0.58), suggesting that larger banks tend to have stronger overall ESG performance, particularly in environmental areas. This pattern might reflect larger institutions' greater resources for sustainability initiatives or their enhanced regulatory scrutiny and reporting requirements.
-
-The leverage ratio exhibits strong positive correlations with equity-to-assets (0.87) and RWA ratio (0.86), confirming the interconnected nature of these capital adequacy measures. Notably, the leverage ratio shows a negative correlation with log assets (-0.45), indicating that larger banks tend to operate with relatively lower leverage ratios.
+The three ESG pillars show different patterns of association with risk metrics. The environmental pillar correlates negatively (-0.11) with CET1 risk exposure, while the social pillar shows a stronger negative relationship (-0.35). Governance displays the weakest correlation with CET1 risk (-0.12). Bank size (log assets) demonstrates positive correlations with ESG score (0.50) and environmental pillar score (0.58), suggesting that larger banks tend to have stronger overall ESG performance, particularly in environmental areas. This pattern might reflect larger institutions' greater resources for sustainability initiatives or their enhanced regulatory scrutiny and reporting requirements. Notably, the leverage ratio shows a negative correlation with log assets (-0.45), indicating that larger banks tend to operate with relatively lower leverage ratios.
 
 ```{r correlation-matrix, echo=FALSE, results='asis', fig.cap="Correlation Matrix."}
 # Define variables for the correlation matrix (can be a subset for readability)
@@ -198,17 +197,245 @@ correlation_table <- generate_correlation_table(data_analysis,
 print(correlation_table)
 ```
 
-## Variable Distributions
+# Methodology
 
-Figure \@ref(fig:distributions) illustrates the distributions of five key variables. The ESG score distribution appears approximately normal with a slight left skew, showing a concentration of values between 70 and 85. This clustering suggests a convergence toward relatively high ESG performance among European banks, though the left tail indicates a subset of institutions with substantially lower scores.
+This section presents the empirical approach used to examine the relationship between ESG performance and banking risk. This paper employs several complementary methodologies to address potential issues of unobserved heterogeneity, non-linearity, and endogeneity, providing a comprehensive analysis of how ESG factors relate to various banking risk measures.
 
-The CET1 risk exposure distribution exhibits a more symmetrical bell shape centered around 0.6, with most values falling between 0.5 and 0.7. This relative uniformity likely reflects the regulatory framework's influence, as banks must maintain minimum capital requirements while facing competitive and shareholder pressures that discourage excessive capital holdings.
+## Fixed Effects Panel Models
 
-The leverage ratio distribution shows right skew, with most observations concentrated between 0.15 and 0.25, and a longer tail extending toward higher values. This pattern indicates that while most banks maintain similar leverage levels, some institutions operate with significantly higher ratios, potentially reflecting different business models or risk appetites.
+The primary analytical framework employs panel data models with two-way fixed effects, incorporating non-linear specifications to capture potential curvilinear relationships. This approach controls for both time-invariant bank characteristics and common time trends, addressing concerns about unobserved heterogeneity highlighted in previous banking studies (Gehrig et al., 2023; Palmieri et al., 2023).
 
-Log assets display a bimodal distribution, with peaks around 12.5 and 14.5, suggesting two distinct size clusters in our sample—medium-sized banks and larger institutions. This bimodality is important to consider in subsequent analyses, as size may moderate the relationship between ESG performance and risk metrics.
+For the overall ESG score, the non-linear specification is:
+$$Y_{i,t} = \beta_0 + \beta_1 \text{ESG}_{i,t} + \beta_2 \text{ESG}_{i,t}^2 + \beta_3 Y_{i,t-1} + \boldsymbol{\beta_4} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+where $Y_{i,t}$ represents the risk measure for bank $i$ in year $t$ (e.g., CET1 risk exposure, Tier 1 risk exposure, leverage ratio); $\text{ESG}_{i,t}$ denotes the overall ESG score; $\text{ESG}_{i,t}^2$ is the squared term capturing potential non-linear effects; $Y_{i,t-1}$ represents a lagged dependent variable to account for persistence in risk measures; $\mathbf{X}_{i,t}$ is a vector of control variables including the natural logarithm of total assets and the equity-to-assets ratio; $\alpha_i$ are bank fixed effects capturing time-invariant bank characteristics; $\lambda_t$ are year fixed effects accounting for common time trends; and $\varepsilon_{i,t}$ is the error term.
 
-The equity-to-assets ratio distribution is right-skewed with most values concentrated between 0.04 and 0.08. The clustering at relatively low values is consistent with banking industry norms, where thin equity margins are typical. The right tail represents banks operating with more conservative capital structures.
+For a more granular analysis of ESG components, the model is extended to include non-linear terms for each pillar:
+$$Y_{i,t} = \beta_0 + \beta_1 \text{ENV}_{i,t} + \beta_2 \text{ENV}_{i,t}^2 + \beta_3 \text{SOC}_{i,t} + \beta_4 \text{SOC}_{i,t}^2 + \beta_5 \text{GOV}_{i,t} + \beta_6 \text{GOV}_{i,t}^2 + \beta_7 Y_{i,t-1} + \boldsymbol{\beta_8} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+where $\text{ENV}_{i,t}$, $\text{SOC}_{i,t}$, and $\text{GOV}_{i,t}$ represent the environmental, social, and governance pillar scores, respectively, with their corresponding squared terms.
+
+This differentiated approach follows Bannier et al. (2021) and Palmieri et al. (2023), who demonstrated that individual ESG components may influence risk metrics differently. The inclusion of quadratic terms addresses potential non-linear relationships suggested by Barth et al. (2022) and Ersoy et al. (2022), while the dynamic specification with lagged dependent variables aligns with approaches used by Danisman and Tarazi (2023) and Gehrig et al. (2023) to account for gradual adjustments in bank risk profiles in response to changes in ESG factors. The fixed effects specification helps mitigate omitted variable bias from time-invariant factors, a crucial concern noted by Carnevale and Drago (2024) in ESG-banking research.
+
+## Quantile Regression Analysis
+
+To examine potential heterogeneous effects of ESG factors across different levels of banking risk a quantile regression analysis is employed, following methodological precedents in banking literature such as Curcio et al. (2023) and Izcan and Bektas (2022). Unlike standard OLS or fixed effects models that focus on the conditional mean, quantile regressions estimate the relationship at different points in the conditional distribution of the dependent variable:
+$$Q_{Y_{i,t}}(\tau|\text{ESG}_{i,t}, \mathbf{X}_{i,t}) = \beta_0(\tau) + \beta_1(\tau) \text{ESG}_{i,t} + \boldsymbol{\beta_2}(\tau) \mathbf{X}_{i,t}$$
+where $Q_{Y_{i,t}}(\tau|\text{ESG}_{i,t}, \mathbf{X}_{i,t})$ denotes the $\tau$-th conditional quantile of the risk measure $Y_{i,t}$, and $\beta_j(\tau)$ are the coefficients that may vary across quantiles. I estimate this model for five quantiles ($\tau = 0.1, 0.25, 0.5, 0.75, 0.9$), providing insights into how ESG scores affect banks with different risk profiles. This approach is valuable for regulatory purposes, as it helps identify whether ESG factors have stronger implications for higher-risk institutions.
+
+For pillar-specific effects, I estimate:
+$$Q_{Y_{i,t}}(\tau|\text{ENV}_{i,t}, \text{SOC}_{i,t}, \text{GOV}_{i,t}, \mathbf{X}_{i,t}) = \beta_0(\tau) + \beta_1(\tau) \text{ENV}_{i,t} + \beta_2(\tau) \text{SOC}_{i,t} + \beta_3(\tau) \text{GOV}_{i,t} + \boldsymbol{\beta_4}(\tau) \mathbf{X}_{i,t}$$
+This allows for examining whether specific ESG components have differential impacts across the risk distribution, a nuance that means-based approaches might obscure.
+
+## Principal Component Analysis
+
+To address the high dimensionality and potential multicollinearity among ESG components, I employ Principal Component Analysis (PCA). This approach is particularly valuable given the detailed ESG component data available in the Refinitiv database, which includes numerous subcategories beyond the three main pillars.
+
+PCA transforms the original ESG variables into a set of orthogonal principal components that capture the maximum variance in the data:
+$$PC_j = \sum_{k=1}^p a_{jk} Z_k$$
+where $PC_j$ is the $j$-th principal component, $Z_k$ represents the standardized $k$-th ESG variable, and $a_{jk}$ are the component loadings. I retain enough components to explain approximately 80% of the total variance, with a maximum of five components to maintain interpretability.
+
+These principal components are then used as regressors in the fixed effects model:
+$$Y_{i,t} = \beta_0 + \sum_{j=1}^m \beta_j PC_{j,i,t} + \boldsymbol{\beta_{m+1}} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
+where $m$ is the number of retained principal components. This PCA approach follows methodological insights from Goss and Roberts (2010), who applied similar techniques to reduce dimensionality in KLD social responsibility data. It allows for capturing the underlying structure of ESG performance while avoiding collinearity issues that might arise when including multiple correlated ESG components simultaneously.
+
+# Results
+
+This section presents the main results from the empirical analyses. It first present the findings from the fixed effects panel models, examining the impact of overall ESG scores and individual ESG pillars on risk-weighted capital ratios, leverage ratios, provisions, and liquidity ratios. I then discuss the results from the quantile regression analysis, highlighting how ESG factors affect banks with different risk profiles. Finally, I present the outcomes of the PCA analysis, illustrating how principal components of ESG performance relate to banking risk metrics.
+
+## Fixed Effects Panel Models
+
+### Overall ESG score
+
+Table \@ref(tab:esg-table) presents the fixed effects estimates for the relationship between the overall ESG score and eight different risk measures. The models include both linear and quadratic ESG terms to capture potential non-linearities, along with control variables (log assets and equity-to-assets ratio).
+
+```{r esg-table}
+ms_esg_table
+```
+
+The results reveal a nuanced relationship between ESG performance and bank risk measures. For the capital adequacy ratios (CET1, Tier 1, and total capital risk exposure), the coefficients on the linear ESG score term are positive but statistically insignificant. The quadratic terms are similarly insignificant across these specifications, indicating no detectable non-linear relationship within the sample period.
+
+For leverage ratio, provisions, and provisions ratio, again statistically insignificant coefficients on both the linear and quadratic ESG terms are observable. The lack of significance persists across liquidity ratio and risk-weighted assets (RWA) ratio models, though the coefficient for the squared ESG term in the RWA ratio model approaches marginal significance (p < 0.1). 
+
+In contrast, the control variables exhibit strong and significant relationships with risk measures. Bank size (measured by log assets) positively correlates with all three capital adequacy ratios, with significant coefficients ranging from 0.185 to 0.238 (p < 0.001). This aligns with the expectation that larger banks maintain higher capital buffers, potentially due to heightened regulatory scrutiny or superior access to capital markets. Similarly, the equity-to-assets ratio demonstrates strong positive associations with capital adequacy measures, leverage ratio, and provisions ratio, with coefficients ranging from 1.327 to 4.727 (p < 0.01 or better). This reflects the mechanical relationship between equity holdings and risk-based capital ratios, as well as the broader tendency of well-capitalized banks to maintain stronger risk buffers.
+
+These results differ somewhat from the literature, who mostly documented more consistent relationships between ESG scores and bank stability measures. However, the use of regulatory risk metrics rather than market-based measures may account for some of these differences. Additionally, the focus on a post-2019 period captures a regulatory environment with more developed ESG integration, potentially altering the ESG-risk relationship compared to earlier studies.
+
+### ESG Pillar Score Effects
+
+To further investigate the potential heterogeneity in how different ESG dimensions affect banking risk, Table \@ref(tab:pillar-table) presents fixed effects estimates that decompose the overall ESG score into its three constituent pillars: Environmental, Social, and Governance. 
+
+```{r pillar-table}
+ms_pillar_table
+```
+
+The results reveal distinct patterns across the three pillars. The Environmental pillar demonstrates a negative relationship with CET1 risk exposure (-0.006), though not statistically significant. However, for provisions ratio, the Environmental score shows a significant positive association (0.007, p < 0.05), with a corresponding significant negative quadratic term (-0.000, p < 0.05). This suggests that while higher environmental performance initially correlates with higher provisions, this relationship diminishes at very high levels of environmental performance—potentially indicating that moderate environmental improvements correspond to more conservative provisioning practices, but extreme environmental focus may come at the expense of such prudence.
+
+The Social pillar exhibits the strongest associations with risk measures among the three ESG dimensions. The coefficients for Social score are positive and statistically significant for all three capital adequacy measures: 0.027 for CET1 risk exposure, 0.030 for Tier 1 risk exposure, and 0.030 for total capital risk exposure (all p < 0.01). These are accompanied by significant negative quadratic terms (-0.000, p < 0.01), indicating an inverted U-shaped relationship where the positive impact on capital ratios diminishes at very high Social score levels. This pattern aligns with findings from Ashwin Kumar et al. (2016), who documented relationships between social performance and financial stability. For RWA ratio, the Social pillar shows a significant negative linear coefficient (-0.014, p < 0.05) with a positive quadratic term (0.000, p < 0.01), suggesting a U-shaped relationship where moderate social performance correlates with lower risk-weighted assets, but this effect reverses at extreme values.
+
+The Governance pillar demonstrates marginally significant negative associations with Tier 1 and total capital risk exposures (-0.003 and -0.004, respectively, p < 0.1), with corresponding positive quadratic terms (both 0.000, p < 0.1). This suggests a subtle U-shaped relationship where moderate governance scores correlate with lower capital ratios, but very high governance scores may actually correspond to higher capital adequacy. This non-linear pattern aligns with findings from Barth et al. (2022), who observed complex relationships between governance factors and credit risk.
+
+Control variables maintain similar patterns to those observed in the overall ESG score models, with log assets and equity-to-assets ratio showing strong positive associations with capital adequacy measures. The model fit improves noticeably compared to the overall ESG score specifications, with R-squared values increasing across all risk measures. For instance, the R-squared for CET1 risk exposure increases from 0.457 to 0.544, suggesting that distinguishing between ESG pillars captures meaningful variation that aggregate scores obscure.
+
+These findings highlight the importance of disaggregating ESG scores into their component pillars, as the three dimensions exhibit distinct—and sometimes opposing—relationships with banking risk measures. The consistently significant effects observed for the Social pillar suggest that social performance may be particularly relevant for bank risk profiles, potentially through mechanisms related to stakeholder trust, reputation, and employee relations as highlighted by Amiraslani et al. (2017) and Godfrey (2005).
+
+### Limitations of the Fixed Effects Approach
+
+However, several limitations warrant consideration. First, fixed effects models cannot account for potential reverse causality between ESG performance and banking risk. Banks with stronger capital positions might allocate more resources to ESG initiatives, creating a bidirectional relationship that fixed effects alone cannot disentangle. This concern is particularly relevant given findings by Cornett et al. (2016) and Bouslah et al. (2013) suggesting that financial performance may drive subsequent ESG investments.
+
+Second, fixed effects estimates identify relationships based on within-bank variation over time, which may be limited in the relatively short sample period (2020-2023). The modest time variation in ESG scores—as evident in Figure \@ref(fig:time-trends)—could contribute to the limited statistical significance observed for some relationships. This temporal constraint also means the analysis primarily captures short-term associations rather than long-term equilibrium relationships between ESG factors and banking risk.
+
+## Quantile Regression Analysis
+
+This section presents the results from quantile regression analysis, which examines the potentially heterogeneous effects of ESG factors across different levels of banking risk. While the fixed effects models presented earlier provide insights into average relationships between ESG performance and risk metrics, they may mask important variations across the risk distribution. Quantile regression addresses this limitation by estimating the relationship at different points in the conditional distribution of the dependent variable, providing a more nuanced understanding of how ESG factors relate to banking risk profiles.
+
+### Overall ESG Score 
+
+Table \@ref(fig:quantile-ESG) presents the estimated effects of overall ESG scores on banking risk measures across different quantiles. The results reveal patterns that would be obscured in a conventional mean-based analysis. For CET1 risk exposure, the effect of ESG scores is consistently negative across all quantiles, ranging from -0.004 at the 0.1 quantile to -0.002 at the 0.9 quantile. This suggests that higher ESG performance is associated with lower CET1 risk exposure across the entire distribution, with a slightly stronger effect for banks with already lower capital ratios (lower quantiles).
+
+```{r}
+# Run the quantile regression analysis
+results <- run_simplified_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "leverage_ratio", "provisions_ratio"),
+  tau_values = c(0.1, 0.25, 0.5, 0.75, 0.9)
+)
+```
+
+```{r}
+summary_data <- get_raw_summary_tables(
+  results$coefficients$esg, 
+  results$coefficients$pillars
+)
+```
+
+```{r quantile-esg-table}
+make_simple_esg_summary_table(summary_data)
+```
+
+The statistical significance of these effects varies across the distribution. As shown in Table \@ref(tab:quantile-esg-table), the ESG coefficient is significant at the 5% level for the 0.1 quantile (-0.004, p < 0.05) and at the 0.1% level for the 0.25 and 0.5 quantiles (-0.003, p < 0.001). However, it becomes only marginally significant at the 0.75 quantile (-0.003, p < 0.1) and insignificant at the 0.9 quantile (-0.002, p > 0.1). This pattern suggests that ESG performance has a more reliable relationship with capital adequacy for banks in the lower to middle ranges of the risk distribution.
+
+For Tier 1 risk exposure, a similar pattern emerges, with a negative relationship that is most pronounced at the median quantile. The effect becomes more varied at the extremes of the distribution, particularly at the 0.9 quantile where the confidence interval widens substantially. This indicates greater uncertainty in the ESG-risk relationship for banks with the highest Tier 1 risk exposure ratios.
+
+The relationship between ESG scores and leverage ratio shows minimal variation across quantiles, with coefficients close to zero throughout the distribution. This aligns with the findings from fixed effects models, suggesting that ESG performance has limited direct association with leverage decisions.
+
+For provisions ratio, the coefficients are slightly positive and relatively stable across quantiles, though generally lacking statistical significance. This suggests that while higher ESG scores might be associated with marginally higher provisioning, this relationship is not particularly strong at any point in the risk distribution.
+
+```{r cet1-quantile-esg}
+make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
+```
+
+Table \@ref(tab:cet1-quantile-esg) provides a detailed view of quantile regression results for CET1 risk exposure across different quantiles. Beyond the ESG coefficient, it reveals interesting patterns in control variables. The effect of log assets on CET1 risk exposure decreases monotonically across quantiles, from 0.027 (p < 0.05) at the 0.1 quantile to -0.040 (p < 0.05) at the 0.9 quantile. This suggests that bank size has a positive relationship with capital adequacy for riskier banks (lower quantiles) but a negative relationship for safer banks (higher quantiles), a nuanced finding that would be missed in mean-based analyses.
+
+Similarly, the coefficient for equity-to-assets ratio shows substantial variation, from a positive but insignificant 1.096 at the 0.1 quantile to a negative and marginally significant -2.294 (p < 0.1) at the 0.9 quantile. This unexpected pattern at higher quantiles might reflect that banks with already high CET1 ratios exhibit different strategic approaches to overall equity levels, potentially optimizing other aspects of their capital structure.
+
+### ESG Pillar Effects Across Risk Quantiles
+
+Disaggregating ESG into its component pillars reveals even more nuanced relationships that vary across the risk distribution, as shown in Figures \@ref(fig:quantile-environmental), \@ref(fig:qunatile-social), and \@ref(fig:quantile-governance) in the Appendix and table \@ref(tab:quantile-pillar-table). 
+
+```{r quantile-pillar-table}
+make_simple_pillar_summary_table(summary_data)
+```
+
+The environmental pillar demonstrates a relationship with CET1 risk exposure that varies substantially across quantiles. At lower quantiles (0.1 and 0.25), the relationship is weakly negative, becoming more positive at higher quantiles, though generally not reaching statistical significance (Table \@ref(tab:quantile-pillar-table)). This pattern suggests that environmental performance may have different implications for banks depending on their position in the risk distribution, with potentially beneficial effects for lower-risk banks.
+
+For provisions ratio, the environmental score shows an interesting pattern where the relationship is initially positive at lower quantiles but becomes increasingly negative at higher quantiles. This could indicate that banks with already higher provisioning levels (upper quantiles) that focus on environmental performance might adopt more conservative provisioning practices, while the opposite occurs for banks with lower provisions.
+
+The social pillar exhibits the most consistent relationship with capital adequacy measures across the risk distribution. For CET1 risk exposure, the coefficient is negative across all quantiles, with values ranging from -0.004 at the 0.25 quantile to -0.008 at the 0.75 quantile (Table \@ref(tab:quantile-pillar-table)). The relationship is statistically significant at the 0.1% level for both the 0.25 and 0.5 quantiles, becoming even stronger at the 0.75 quantile. This pattern suggests that social performance has a particularly strong negative association with capital risk for banks in the middle to upper-middle portions of the risk distribution.
+
+This finding aligns with and extends the results from Ashwin Kumar et al. (2016), who documented relationships between social performance and financial stability. While they found a general association, the quantile analysis reveals that this relationship is more pronounced for banks with moderate to higher capital buffers, suggesting a potential complementarity between social responsibility and prudent capital management for these institutions.
+
+The governance pillar demonstrates the most varied relationship across the risk distribution. For CET1 risk exposure, the coefficient is close to zero at most quantiles, but shows a modest positive relationship at the 0.75 quantile (Table \@ref(tab:quantile-pillar-table)). For provisions ratio, the relationship is slightly positive at median quantiles but becomes negative at extreme quantiles. This heterogeneity aligns with findings from Barth et al. (2022), who observed complex relationships between governance factors and risk metrics.
+
+```{r leverage-quantile-esg}
+make_pillar_table(results$coefficients$pillars, "leverage_ratio")
+```
+
+Table \@ref(tab:leverage-quantile-esg) presents detailed results for the pillar-specific analysis of leverage ratio. Notably, the environmental score shows a statistically significant negative relationship at the 0.25 quantile (-0.001, p < 0.01), but this effect disappears at other points in the distribution. The social and governance pillars show minimal effects across all quantiles. Control variables, particularly equity-to-assets ratio, exhibit strong positive associations with leverage ratio across all quantiles, with coefficients increasing monotonically from 2.193 (p < 0.001) at the 0.1 quantile to 3.010 (p < 0.001) at the 0.9 quantile. This pattern reflects the mechanical relationship between equity holdings and regulatory capital requirements, with the effect becoming stronger for banks with already higher leverage ratios.
+
+## Principal Component Analysis
+
+Building on the methodological framework outlined in Section 5.5, this section presents the results from the Principal Component Analysis (PCA) of ESG dimensions and their relationship with banking risk measures. The first five components collectively explain approximately 83% of the total variance in ESG variables. The first component alone accounts for 46.2% of the variance, followed by the second component with 13.8%, indicating a substantial dimensionality reduction from the original set of ESG variables. This pattern suggests that while ESG performance is multidimensional, a relatively small number of underlying factors capture the majority of variation across European banks.
+
+```{r}
+pca_results <- run_pca_esg_analysis(
+  data = data_analysis,  
+  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
+               "totalcap_risk_exposure", "leverage_ratio", "provisions", 
+               "provisions_ratio", "liquidity_ratio", "rwa_ratio"),
+  variance_threshold = 0.8
+)
+```
+
+The loading patterns displayed in Figure \@ref(fig:pca-loading-plot) provide insights into the composition of these principal components. The first principal component (PC1) shows negative associations with multiple ESG variables, including the overall ESG score, ESG score squared, social score, social score squared, and governance score squared. This pattern suggests that PC1 represents a general ESG factor that captures the common variance across multiple dimensions of sustainability performance. The negative loadings indicate that higher values on this component correspond to lower overall ESG performance, essentially making PC1 an inverse measure of general ESG quality.
+
+```{r pca-loading-plot}
+pca_results$visualizations$loading_plot
+```
+
+The second principal component (PC2) demonstrates a more nuanced pattern with positive associations with "ESG Combined" and "Product Responsibility," but negative associations with "Environmental Innovation," "Environmental Score Squared," and "Environmental Score." This combination suggests that PC2 primarily contrasts social and product responsibility aspects against environmental considerations, potentially capturing a trade-off between these dimensions within banks' sustainability strategies.
+
+As detailed in Table \@ref(tab:pca-interpretation), the third principal component (PC3, 10.2% of variance) juxtaposes product responsibility and social performance against management quality and governance, potentially representing a distinction between external stakeholder engagement and internal governance structures. PC4 (7.2% of variance) appears to capture ESG controversies and innovations versus product responsibility and emissions management, while PC5 (5.4% of variance) contrasts emissions and product responsibility against human rights and community engagement.
+
+```{r pca-interpretation}
+pca_results$visualizations$pc_interpretation
+```
+
+These component structures align with and extend previous research on the multidimensional nature of ESG performance. The identification of components that distinguish between different aspects of sustainability beyond the conventional environmental, social, and governance pillars supports the findings of Goss and Roberts (2010), who similarly documented complex underlying structures in corporate social responsibility data. The emergence of a component specifically related to controversies (PC4) is particularly noteworthy given recent literature highlighting the importance of ESG controversies in financial stability (Amiraslani et al., 2017; Galletta et al., 2022).
+
+Table \@ref(tab:pca-table) presents the fixed effects estimates for the relationship between the extracted principal components and various banking risk measures. Unlike the models based on aggregate ESG scores or individual pillars, the PCA approach allows for examining how distinct underlying dimensions of ESG performance relate to risk metrics while avoiding multicollinearity issues.
+
+```{r pca-table}
+pca_results$visualizations$pc_model_table
+```
+
+The results reveal several notable patterns. PC1, representing the inverse of general ESG quality, shows a positive but statistically insignificant relationship with CET1 risk exposure (0.001), and negative but insignificant relationships with Tier 1 and total capital risk exposures (-0.002 and -0.003, respectively). This pattern suggests that general ESG quality (inverse of PC1) might be weakly associated with lower CET1 risk exposure but higher Tier 1 and total capital ratios, though these relationships do not reach conventional significance levels.
+
+PC2, contrasting social/product responsibility against environmental considerations, demonstrates a consistent negative relationship with capital adequacy measures, though again without statistical significance. This might suggest that banks emphasizing social and product responsibility over environmental aspects tend to maintain somewhat lower capital ratios, potentially reflecting different risk management priorities across these sustainability dimensions.
+
+PC3, juxtaposing stakeholder engagement against governance, exhibits the strongest relationships with capital adequacy measures, with coefficients of -0.010 for CET1 risk exposure, -0.007 for Tier 1 risk exposure, and -0.009 for total capital risk exposure. While these relationships do not reach statistical significance at conventional levels, their consistent direction and relatively larger magnitudes suggest that banks with stronger external stakeholder engagement relative to governance might maintain lower capital ratios. This aligns with findings by Di Tommaso and Thornton (2020), who documented relationships between governance structures and bank stability measures.
+
+For provisions ratio, PC2 shows a marginally significant positive relationship (0.010, p < 0.1), indicating that banks emphasizing social and product responsibility over environmental considerations tend to maintain higher provisions. This pattern is consistent with a risk management approach that prioritizes protection against potential loan losses, potentially offsetting relatively lower capital ratios.
+
+PC4 and PC5 show varied relationships across risk measures, though generally without statistical significance. The lack of consistent patterns for these components might reflect their more specialized nature, capturing aspects of ESG performance that are less directly relevant for the broad risk metrics examined here.
+
+Across all models, the control variables maintain patterns similar to those observed in previous analyses. Bank size (log assets) positively correlates with capital adequacy measures, with significant coefficients ranging from 0.199 to 0.261 (p < 0.001). Similarly, the equity-to-assets ratio demonstrates strong positive associations with capital adequacy measures, leverage ratio, and provisions ratio, with coefficients ranging from 1.771 to 4.611 (p < 0.001). These robust relationships underscore the importance of controlling for fundamental bank characteristics when examining the influence of ESG factors on risk metrics.
+
+The PCA results offer several important insights beyond those provided by the aggregate ESG and pillar-level analyses. First, they confirm that ESG performance is multidimensional, with several distinct underlying factors that exhibit different relationships with banking risk measures. This complexity underscores the limitations of relying solely on aggregate ESG scores or even the three conventional pillars when examining the implications of sustainability for financial institutions. Second, the emergence of components that cut across traditional ESG categories—such as PC2 contrasting social responsibility against environmental considerations, or PC3 juxtaposing stakeholder engagement against governance—suggests potential trade-offs or strategic choices within banks' sustainability approaches. These strategic orientations may have different implications for risk management and capital allocation decisions, extending beyond simple positive or negative relationships with overall ESG quality.
+
+# Conclusion
+
+This study provides empirical evidence on the relationship between ESG performance and banking risk for European banks from 2020 to 2023, employing multiple methodological approaches to address potential concerns of unobserved heterogeneity, non-linearity, and heterogeneous effects across the risk distribution. The results reveal several important insights for researchers, practitioners, and policymakers interested in the intersection of sustainability and financial stability.
+
+First, while the overall ESG score demonstrates limited association with risk metrics in fixed effects specifications, the disaggregation into component pillars uncovers substantial heterogeneity in their effects. The social pillar consistently emerges as the most influential ESG dimension, exhibiting significant positive relationships with capital adequacy measures characterized by inverted U-shaped patterns. This finding suggests that banks' engagement with social considerations—including employee relations, community involvement, and human rights—may be particularly relevant for risk management practices, potentially operating through channels of reputational capital and stakeholder trust.
+
+Second, the quantile regression analysis reveals that ESG effects vary significantly across the risk distribution. The overall ESG score demonstrates a consistently negative relationship with CET1 risk exposure that is strongest for banks in the lower to middle quantiles, while the social pillar exhibits the most consistent negative association with capital adequacy measures across the entire distribution. These findings highlight the value of moving beyond mean-based approaches when examining the ESG-risk relationship, with significant implications for supervisory focus and regulatory design.
+
+Third, the principal component analysis uncovers a more nuanced underlying structure of ESG performance that extends beyond the traditional environmental, social, and governance pillars. The identification of components that cut across conventional ESG categories—such as the contrast between social responsibility and environmental considerations (PC2), or the juxtaposition of stakeholder engagement against governance (PC3)—suggests that banks may face strategic choices in their sustainability approaches, with different implications for risk profiles.
+
+Nevertheless, this study faces several limitations that warrant consideration. The relatively short time period (2020-2023) limits the ability to identify long-term equilibrium relationships between ESG factors and banking risk. Additionally, despite the methodological approach, concerns about potential reverse causality remain, as banks with stronger capital positions might allocate more resources to ESG initiatives, creating bidirectional relationships that fixed effects cannot fully disentangle.
+
+Future research could address these limitations by employing longer time series, particularly as ESG reporting continues to mature. Researchers should consider instrumental variable approaches to more directly address endogeneity concerns, possibly leveraging regulatory shifts or external shocks as exogenous variation in ESG focus. Additionally, investigating the channels through which ESG factors—particularly social dimensions—influence banking risk represents a promising direction, potentially through customer loyalty, employee retention, or regulatory anticipation. Finally, as ESG disclosure requirements continue to evolve under initiatives like the EU Taxonomy and the Corporate Sustainability Reporting Directive, future studies could examine how standardization in reporting affects the relationship between sustainability performance and banking stability.
+
+In conclusion, this study contributes to the understanding of the ESG-risk nexus in banking by highlighting the multidimensional nature of sustainability performance and its varied relationships with risk metrics across different bank profiles. These findings underscore the potential value of integrating nuanced ESG considerations into both risk management practices and regulatory frameworks, while acknowledging the complex trade-offs that may exist between different sustainability dimensions.
+
+# Appendix
+
+## References
+
+## Tables
+
+```{r variables-table, echo=FALSE}
+source("variables_df.R")
+kable(variables_df, 
+      caption = "Overview of variables", 
+      booktabs = TRUE,
+      longtable = TRUE) %>%
+  kable_styling(latex_options = c("striped", "repeat_header", "hold_position"),
+                font_size = 9) %>%
+  column_spec(1, bold = TRUE, width = "2.5in") %>%
+  column_spec(2, width = "2.5in") %>%
+  column_spec(3, width = "1in")
+```
 
 ```{r distributions, echo=FALSE, fig.cap="Distributions of Key Variables."}
 # Define variables for distribution plots
@@ -221,6 +448,7 @@ distribution_plot <- generate_distribution_plots(data_analysis, dist_vars)
 # Print the plot to include it in the document
 print(distribution_plot)
 ```
+
 
 ## Time Trends
 
@@ -242,287 +470,11 @@ time_trend_plot <- generate_time_trend_plots(data_analysis, trend_vars)
 print(time_trend_plot)
 ```
 
-
-# Methodology
-
-This section presents the empirical approach used to examine the relationship between ESG performance and banking risk. I employ several complementary methodologies to address potential issues of unobserved heterogeneity, non-linearity, and endogeneity, providing a comprehensive analysis of how ESG factors relate to various banking risk measures.
-
-## Fixed Effects Panel Models
-
-The primary analytical framework consists of panel data models with two-way fixed effects. This approach controls for both time-invariant bank characteristics and common time trends, addressing concerns about unobserved heterogeneity highlighted in previous banking studies (Gehrig et al., 2023; Palmieri et al., 2023). The baseline specification for the overall ESG score is:
-
-$$Y_{i,t} = \beta_0 + \beta_1 \text{ESG}_{i,t} + \boldsymbol{\beta_2} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-where $Y_{i,t}$ represents the risk measure for bank $i$ in year $t$ (e.g., CET1 risk exposure, Tier 1 risk exposure, leverage ratio); $\text{ESG}_{i,t}$ denotes the overall ESG score; $\mathbf{X}_{i,t}$ is a vector of control variables including the natural logarithm of total assets and the equity-to-assets ratio; $\alpha_i$ are bank fixed effects capturing time-invariant bank characteristics; $\lambda_t$ are year fixed effects accounting for common time trends; and $\varepsilon_{i,t}$ is the error term.
-
-For a more granular analysis of ESG components, I also estimate models using the three pillar scores separately:
-
-$$Y_{i,t} = \beta_0 + \beta_1 \text{ENV}_{i,t} + \beta_2 \text{SOC}_{i,t} + \beta_3 \text{GOV}_{i,t} + \boldsymbol{\beta_4} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-where $\text{ENV}_{i,t}$, $\text{SOC}_{i,t}$, and $\text{GOV}_{i,t}$ represent the environmental, social, and governance pillar scores, respectively.
-
-This differentiated approach follows Bannier et al. (2021) and Palmieri et al. (2023a), who demonstrated that individual ESG components may influence risk metrics differently. The fixed effects specification helps mitigate omitted variable bias from time-invariant factors, a crucial concern noted by Carnevale and Drago (2024) in ESG-banking research.
-
-## Non-linear Relationships and Dynamic Specifications
-
-To account for potential non-linear relationships between ESG performance and risk measures, as suggested by Barth et al. (2022) and Ersoy et al. (2022), I extend the baseline model to include quadratic terms:
-
-$$Y_{i,t} = \beta_0 + \beta_1 \text{ESG}_{i,t} + \beta_2 \text{ESG}_{i,t}^2 + \beta_3 Y_{i,t-1} + \boldsymbol{\beta_4} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-where $\text{ESG}_{i,t}^2$ is the squared term of the ESG score and $Y_{i,t-1}$ represents a lagged dependent variable to account for potential persistence in risk measures. A similar quadratic specification is applied to the pillar-level model:
-
-$$Y_{i,t} = \beta_0 + \beta_1 \text{ENV}_{i,t} + \beta_2 \text{ENV}_{i,t}^2 + \beta_3 \text{SOC}_{i,t} + \beta_4 \text{SOC}_{i,t}^2 + \beta_5 \text{GOV}_{i,t} + \beta_6 \text{GOV}_{i,t}^2 + \beta_7 Y_{i,t-1} + \boldsymbol{\beta_8} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-The inclusion of lagged dependent variables addresses potential dynamics in the relationship between ESG performance and risk, as banks may adjust their risk profiles gradually in response to changes in ESG factors. This dynamic specification aligns with approaches used by Danisman and Tarazi (2023) and Gehrig et al. (2023) in similar contexts.
-
-## Quantile Regression Analysis
-
-To examine potential heterogeneous effects of ESG factors across different levels of banking risk, I employ quantile regression analysis, following methodological precedents in banking literature such as Curcio et al. (2023) and Izcan and Bektas (2022). Unlike standard OLS or fixed effects models that focus on the conditional mean, quantile regressions estimate the relationship at different points in the conditional distribution of the dependent variable:
-
-$$Q_{Y_{i,t}}(\tau|\text{ESG}_{i,t}, \mathbf{X}_{i,t}) = \beta_0(\tau) + \beta_1(\tau) \text{ESG}_{i,t} + \boldsymbol{\beta_2}(\tau) \mathbf{X}_{i,t}$$
-
-where $Q_{Y_{i,t}}(\tau|\text{ESG}_{i,t}, \mathbf{X}_{i,t})$ denotes the $\tau$-th conditional quantile of the risk measure $Y_{i,t}$, and $\beta_j(\tau)$ are the coefficients that may vary across quantiles. I estimate this model for five quantiles ($\tau = 0.1, 0.25, 0.5, 0.75, 0.9$), providing insights into how ESG scores affect banks with different risk profiles. This approach is valuable for regulatory purposes, as it helps identify whether ESG factors have stronger implications for higher-risk institutions.
-
-For pillar-specific effects, I estimate:
-
-$$Q_{Y_{i,t}}(\tau|\text{ENV}_{i,t}, \text{SOC}_{i,t}, \text{GOV}_{i,t}, \mathbf{X}_{i,t}) = \beta_0(\tau) + \beta_1(\tau) \text{ENV}_{i,t} + \beta_2(\tau) \text{SOC}_{i,t} + \beta_3(\tau) \text{GOV}_{i,t} + \boldsymbol{\beta_4}(\tau) \mathbf{X}_{i,t}$$
-
-This allows for examining whether specific ESG components have differential impacts across the risk distribution, a nuance that means-based approaches might obscure.
-
-
-## Instrumental Variable Approach
-
-To address potential endogeneity concerns arising from reverse causality or omitted variables, I implement an instrumental variable (IV) approach. Following strategies employed by Danisman and Tarazi (2023) and Gehrig et al. (2023), I construct instruments based on leave-one-out country-year averages of ESG scores:
-
-$$\text{Instr\_ESG}_{i,c,t} = \frac{\sum_{j \in c, j \neq i} \text{ESG}_{j,t}}{\sum_{j \in c, j \neq i} 1}$$
-
-where $\text{Instr\_ESG}_{i,c,t}$ is the instrument for bank $i$ in country $c$ in year $t$, calculated as the average ESG score of all other banks in the same country and year. This instrument leverages the idea that a bank's ESG performance is influenced by country-level norms and regulations (Ioannou and Serafeim, 2012), but should not directly affect that specific bank's risk measures except through its impact on the bank's own ESG performance.
-
-The IV estimation is implemented using a two-stage approach:
-
-First stage:
-$$\text{ESG}_{i,t} = \gamma_0 + \gamma_1 \text{Instr\_ESG}_{i,c,t} + \boldsymbol{\gamma_2} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \nu_{i,t}$$
-
-Second stage:
-$$Y_{i,t} = \beta_0 + \beta_1 \widehat{\text{ESG}}_{i,t} + \boldsymbol{\beta_2} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-where $\widehat{\text{ESG}}_{i,t}$ represents the predicted values from the first stage. Similar instruments are constructed for each pillar score in the pillar-specific IV models. This approach helps isolate the causal effect of ESG performance on banking risk, addressing concerns raised by Bouslah et al. (2013) and Cornett et al. (2016) about the direction of causality between ESG and financial outcomes.
-
-## Principal Component Analysis
-
-To address the high dimensionality and potential multicollinearity among ESG components, I employ Principal Component Analysis (PCA), a dimensionality reduction technique. This approach is particularly valuable given the detailed ESG component data available in the Refinitiv database, which includes numerous subcategories beyond the three main pillars.
-
-PCA transforms the original ESG variables into a set of orthogonal principal components that capture the maximum variance in the data:
-
-$$PC_j = \sum_{k=1}^p a_{jk} Z_k$$
-
-where $PC_j$ is the $j$-th principal component, $Z_k$ represents the standardized $k$-th ESG variable, and $a_{jk}$ are the component loadings. I retain enough components to explain approximately 80% of the total variance, with a maximum of five components to maintain interpretability.
-
-These principal components are then used as regressors in the fixed effects model:
-
-$$Y_{i,t} = \beta_0 + \sum_{j=1}^m \beta_j PC_{j,i,t} + \boldsymbol{\beta_{m+1}} \mathbf{X}_{i,t} + \alpha_i + \lambda_t + \varepsilon_{i,t}$$
-
-where $m$ is the number of retained principal components. This PCA approach follows methodological insights from Goss and Roberts (2010), who applied similar techniques to reduce dimensionality in KLD social responsibility data. It allows for capturing the underlying structure of ESG performance while avoiding collinearity issues that might arise when including multiple correlated ESG components simultaneously.
-
-## Robustness and Specification Tests
-
-For each model, I conduct a series of robustness and specification tests to ensure the validity of the results. For the fixed effects models, I implement Hausman tests to confirm the appropriateness of fixed versus random effects specifications. I also employ Driscoll-Kraay standard errors to address potential cross-sectional dependence, a common concern in panel data with financial institutions, as highlighted by Curcio et al. (2024).
-
-For the IV estimations, I evaluate instrument strength using first-stage F-statistics, with values above 10 generally indicating sufficiently strong instruments (Staiger and Stock, 1997). While formal Hausman tests for endogeneity are limited by data constraints, I examine the differences between fixed effects and IV estimates to assess the potential magnitude of endogeneity bias.
-
-In the quantile regression framework, I use bootstrap methods (Koenker and Hallock, 2001) to compute standard errors robust to heteroskedasticity. For PCA, I examine loading patterns and variance explained to ensure that the retained components adequately capture the underlying ESG dimensions.
-
-This comprehensive methodological approach, combining fixed effects, non-linear specifications, quantile regression, PCA, and IV estimation, allows for a robust examination of the relationship between ESG performance and banking risk, addressing multiple econometric challenges highlighted in the literature. By implementing these complementary methodologies, I aim to provide a nuanced understanding of how different aspects of ESG performance relate to various banking risk measures across the risk distribution.
-
-# Results
-
-This section presents the main results from the empirical analyses, focusing on the relationship between ESG performance and banking risk measures. I It first present the findings from the fixed effects panel models, examining the impact of overall ESG scores and individual ESG pillars on risk-weighted capital ratios, leverage ratios, provisions, and liquidity ratios. I then discuss the results from the quantile regression analysis, highlighting how ESG factors affect banks with different risk profiles. Finally, I present the outcomes of the PCA analysis, illustrating how principal components of ESG performance relate to banking risk metrics.
-
-## Fixed Effects Panel Models
-
-### Overall ESG score
-
-Like discussed in the Methodology section, table \@ref(tab:esg-table) presents the fixed effects estimates for the relationship between the overall ESG score and eight different risk measures. The models include both linear and quadratic ESG terms to capture potential non-linearities, along with key control variables (log assets and equity-to-assets ratio).
-
-```{r esg-table}
-ms_esg_table
-```
-
-The results reveal a nuanced relationship between ESG performance and bank risk measures. For the capital adequacy ratios (CET1, Tier 1, and total capital risk exposure), the coefficients on the linear ESG score term are positive but statistically insignificant (0.000, 0.005, and 0.006, respectively). This suggests that higher ESG scores do not consistently translate into significant changes in risk-weighted capital ratios when controlling for bank-specific characteristics and common time trends. The quadratic terms are similarly insignificant across these specifications, indicating no detectable non-linear relationship within our sample period.
-
-For leverage ratio, provisions, and provisions ratio, we again observe statistically insignificant coefficients on both the linear and quadratic ESG terms. The lack of significance persists across liquidity ratio and risk-weighted assets (RWA) ratio models, though the coefficient for the squared ESG term in the RWA ratio model approaches marginal significance (p < 0.1). This suggests a weak potential non-linear relationship between ESG performance and risk-weighted asset composition that warrants further investigation.
-
-In contrast, the control variables exhibit strong and significant relationships with risk measures. Bank size (measured by log assets) positively correlates with all three capital adequacy ratios, with significant coefficients ranging from 0.185 to 0.238 (p < 0.001). This aligns with the expectation that larger banks maintain higher capital buffers, potentially due to heightened regulatory scrutiny or superior access to capital markets. Similarly, the equity-to-assets ratio demonstrates strong positive associations with capital adequacy measures, leverage ratio, and provisions ratio, with coefficients ranging from 1.327 to 4.727 (p < 0.01 or better). This reflects the mechanical relationship between equity holdings and risk-based capital ratios, as well as the broader tendency of well-capitalized banks to maintain stronger risk buffers.
-
-The overall model fit, as indicated by R-squared values, ranges from 0.142 (liquidity ratio) to 0.487 (total capital risk exposure), suggesting that our fixed effects specifications explain a substantial portion of the variation in risk measures—particularly for capital adequacy ratios. The inclusion of both bank and year fixed effects further ensures that our estimates are robust to unobserved heterogeneity at the institution level and common macroeconomic shocks affecting all banks simultaneously.
-
-These results differ somewhat from findings reported by Chiaramonte et al. (2022) and Di Tommaso and Thornton (2020), who documented more consistent relationships between ESG scores and bank stability measures. However, our use of regulatory risk metrics rather than market-based measures may account for some of these differences. Additionally, our focus on a post-2019 period captures a regulatory environment with more developed ESG integration, potentially altering the ESG-risk relationship compared to earlier studies.
-
-### ESG Pillar Score Effects
-
-To further investigate the potential heterogeneity in how different ESG dimensions affect banking risk, Table \@ref(tab:pillar-table) presents fixed effects estimates that decompose the overall ESG score into its three constituent pillars: Environmental, Social, and Governance. This disaggregated approach allows us to identify whether specific ESG components drive the relationship with risk measures, as suggested by previous literature (Bannier et al., 2021; Izcan & Bektas, 2022).
-
-```{r pillar-table}
-ms_pillar_table
-```
-
-The results reveal distinct patterns across the three pillars. The Environmental pillar demonstrates a negative relationship with CET1 risk exposure (-0.006), though this effect is not statistically significant. However, for provisions ratio, the Environmental score shows a significant positive association (0.007, p < 0.05), with a corresponding significant negative quadratic term (-0.000, p < 0.05). This suggests that while higher environmental performance initially correlates with higher provisions, this relationship diminishes at very high levels of environmental performance—potentially indicating that moderate environmental improvements correspond to more conservative provisioning practices, but extreme environmental focus may come at the expense of such prudence.
-
-The Social pillar exhibits the strongest associations with risk measures among the three ESG dimensions. The coefficients for Social score are positive and statistically significant for all three capital adequacy measures: 0.027 for CET1 risk exposure, 0.030 for Tier 1 risk exposure, and 0.030 for total capital risk exposure (all p < 0.01). These are accompanied by significant negative quadratic terms (-0.000, p < 0.01), indicating an inverted U-shaped relationship where the positive impact on capital ratios diminishes at very high Social score levels. This pattern aligns with findings from Ashwin Kumar et al. (2016), who documented relationships between social performance and financial stability. For RWA ratio, the Social pillar shows a significant negative linear coefficient (-0.014, p < 0.05) with a positive quadratic term (0.000, p < 0.01), suggesting a U-shaped relationship where moderate social performance correlates with lower risk-weighted assets, but this effect reverses at extreme values.
-
-The Governance pillar demonstrates marginally significant negative associations with Tier 1 and total capital risk exposures (-0.003 and -0.004, respectively, p < 0.1), with corresponding positive quadratic terms (both 0.000, p < 0.1). This suggests a subtle U-shaped relationship where moderate governance scores correlate with lower capital ratios, but very high governance scores may actually correspond to higher capital adequacy. This non-linear pattern aligns with findings from Barth et al. (2022), who observed complex relationships between governance factors and credit risk.
-
-Control variables maintain similar patterns to those observed in the overall ESG score models, with log assets and equity-to-assets ratio showing strong positive associations with capital adequacy measures. The model fit improves noticeably compared to the overall ESG score specifications, with R-squared values increasing across all risk measures. For instance, the R-squared for CET1 risk exposure increases from 0.457 to 0.544, suggesting that distinguishing between ESG pillars captures meaningful variation that aggregate scores obscure.
-
-These findings highlight the importance of disaggregating ESG scores into their component pillars, as the three dimensions exhibit distinct—and sometimes opposing—relationships with banking risk measures. The consistently significant effects observed for the Social pillar suggest that social performance may be particularly relevant for bank risk profiles, potentially through mechanisms related to stakeholder trust, reputation, and employee relations as highlighted by Amiraslani et al. (2017) and Godfrey (2005).
-
-### Non-linear Relationships
-
-The inclusion of quadratic terms in our fixed effects specifications allows us to investigate potential non-linear relationships between ESG performance and banking risk. As discussed above, we find evidence of non-linear patterns, particularly for the Social and Governance pillars. The Social pillar exhibits an inverted U-shaped relationship with capital adequacy measures, suggesting that the positive association with capital ratios reaches a maximum at intermediate Social score levels before diminishing. This pattern could reflect diminishing returns to social initiatives or potential trade-offs between extreme social performance and efficient capital management.
-
-For the Governance pillar, the U-shaped relationship with capital adequacy measures suggests that moderate governance scores correlate with relatively lower capital ratios, while both low and very high governance scores associate with higher capital adequacy. This could indicate different strategies in capital management: banks with poor governance may maintain higher capital buffers due to regulatory pressure, while those with excellent governance might voluntarily hold stronger buffers as part of prudent risk management. Banks with intermediate governance performance might optimize capital efficiency more aggressively, resulting in relatively lower (though still regulatory-compliant) capital ratios.
-
-These non-linear patterns align with recent literature suggesting complex relationships between ESG factors and financial outcomes. Ersoy et al. (2022) documented similar non-linear associations between ESG scores and bank market value, while Barth et al. (2022) found U-shaped relationships between ESG factors and credit spreads. Our findings extend these insights to regulatory risk measures, highlighting the importance of considering potential non-linearities when examining ESG-risk relationships.
-
-### Robustness and Model Specification
-
-To ensure the validity of our fixed effects estimates, we conducted several specification tests. The Hausman test results consistently rejected the null hypothesis that random effects provide consistent estimates (p < 0.01 across specifications), confirming the appropriateness of the fixed effects approach. This aligns with theoretical expectations that unobserved bank characteristics correlate with both ESG performance and risk measures, necessitating the fixed effects framework to obtain unbiased estimates.
-
-We further tested for cross-sectional dependence using the Pesaran CD test, which revealed significant interdependence among panel units (p < 0.05). To address this concern, we re-estimated our models using Driscoll-Kraay standard errors, which are robust to both cross-sectional dependence and heteroskedasticity. These adjusted standard errors were generally larger than conventional robust standard errors, resulting in more conservative significance levels for some coefficients. However, the key patterns—particularly the significant associations for the Social pillar—remained robust to this adjustment.
-
-Additionally, we conducted variance inflation factor (VIF) tests to assess potential multicollinearity in our pillar-level models. The VIF values for the Environmental, Social, and Governance pillars ranged from 1.32 to 2.47, well below the conventional threshold of 10, indicating no problematic multicollinearity. The quadratic terms showed higher VIF values (ranging from 4.12 to 7.89) due to their correlation with linear terms, but these values remain within acceptable limits for our analysis.
-
-### Limitations of the Fixed Effects Approach
-
-While our fixed effects specifications address important econometric challenges such as unobserved heterogeneity and time trends, several limitations warrant consideration. First, fixed effects models cannot account for potential reverse causality between ESG performance and banking risk. Banks with stronger capital positions might allocate more resources to ESG initiatives, creating a bidirectional relationship that fixed effects alone cannot disentangle. This concern is particularly relevant given findings by Cornett et al. (2016) and Bouslah et al. (2013) suggesting that financial performance may drive subsequent ESG investments.
-
-Second, fixed effects estimates identify relationships based on within-bank variation over time, which may be limited in our relatively short sample period (2020-2023). The modest time variation in ESG scores—as evident in Figure \@ref(fig:time-trends)—could contribute to the limited statistical significance observed for some relationships. This temporal constraint also means our analysis primarily captures short-term associations rather than long-term equilibrium relationships between ESG factors and banking risk.
-
-Third, while we include squared terms to capture basic non-linearities, more complex functional forms might better represent the true relationship between ESG performance and risk measures. Additionally, potential interaction effects between different ESG dimensions or between ESG factors and bank characteristics (such as size or business model) remain unexplored in our current specifications.
-
-Finally, our fixed effects approach assumes that the relationship between ESG factors and risk measures is homogeneous across the risk distribution. However, as suggested by literature on quantile effects (Izcan & Bektas, 2022), ESG factors might affect high-risk and low-risk banks differently. Similarly, the relationship might vary with institutional context, business model, or regulatory environment—heterogeneity that our current specifications do not fully capture.
-
-These limitations highlight the importance of complementing fixed effects analysis with alternative methodological approaches, such as instrumental variables estimation to address endogeneity concerns, quantile regression to explore heterogeneous effects across the risk distribution, and principal component analysis to capture nuanced dimensions of ESG performance. While these complementary analyses lie beyond the scope of this chapter, they represent valuable directions for extending our understanding of the ESG-risk relationship.
-
-
-## Instrumental Variables Analysis
-
-Building upon the methodology outlined in Section 5.4, this section presents the results from the instrumental variables (IV) analysis, which addresses potential endogeneity concerns in the relationship between ESG performance and banking risk measures. While the fixed effects estimates presented earlier provide valuable insights into associations between ESG factors and risk metrics, they may be biased if reverse causality exists—that is, if banks' risk profiles influence their ESG investments rather than (or in addition to) ESG performance affecting risk.
-
-### Instrumental Variable Approach Implementation
-
-As detailed in the methodology section, I implement a two-stage least squares (2SLS) approach using leave-one-out country-year averages of ESG scores as instruments. This approach leverages the idea that a bank's ESG performance is influenced by country-level norms and regulations but should not directly affect that specific bank's risk measures except through its impact on the bank's own ESG performance. This identification strategy follows similar approaches in recent banking literature (Danisman & Tarazi, 2023; Gehrig et al., 2023).
-
-
-
-### First-Stage Results and Instrument Validity
-
-Before interpreting the second-stage results, it is essential to assess the strength of the instruments. While the first-stage F-statistics are not explicitly reported in Table \@ref(tab:iv-summary-table), the analysis relies on established tests for instrument relevance. The instruments generally show a strong correlation with the endogenous ESG variables, which is consistent with the theoretical expectation that country-level ESG norms influence individual bank ESG performance.
-
-```{r iv-display, fig.height=5, fig.width=8, results='hide'}
-# Run the IV analysis on your dataset
-iv_results <- run_iv_analysis(data_analysis)
-# Make sure all visualization objects are available (hide the TRUE output)
-invisible(create_iv_visualizations())
-```
-
-```{r iv-summary-table, fig.width=6}
-# Format the summary table to fit better
-iv_summary_table %>%
-  kable_styling(font_size = 8, latex_options = "scale_down")
-```
-
-### Comparison of IV and Fixed Effects Estimates
-
-The comparison between FE and IV estimates reveals several notable patterns. For capital adequacy measures (CET1, Tier 1, and total capital risk exposure), the IV coefficients (0.007, 0.011, and 0.015 respectively) are substantially larger than their FE counterparts (0.001, 0.001, and 0.001). This suggests that conventional FE models may underestimate the positive impact of ESG performance on capital ratios. The total capital risk exposure coefficient under IV estimation approaches statistical significance (p < 0.1), implying that banks with stronger ESG performance may maintain higher regulatory capital buffers when endogeneity is accounted for.
-
-Figure \@ref(fig:iv-plots) provides a visual comparison of these differences. The top panel illustrates the coefficient magnitudes across estimation methods, with IV estimates generally showing larger absolute values. The bottom panel quantifies these differences as percentages, revealing dramatic variations. For instance, IV coefficients for CET1, Tier 1, and total capital risk exposures are 1218.1%, 822.9%, and 934.1% larger than their FE counterparts, respectively. This pattern suggests substantial downward bias in the FE estimates, potentially due to negative reverse causality where banks with lower capital ratios invest more in ESG activities to compensate for their higher risk profiles.
-
-```{r iv-plots, fig.height=9, fig.width=8}
-# Arrange plots in a grid with appropriate sizing
-grid.arrange(
-  iv_comparison_plot + theme(plot.margin = margin(0.1, 0.1, 0.5, 0.1, "cm")),
-  iv_pct_diff_plot + theme(plot.margin = margin(0.5, 0.1, 0.1, 0.1, "cm")),
-  ncol = 1,
-  heights = c(1.3, 1)
-)
-```
-
-For provisions, the IV coefficient (399.450) is 2930.4% larger than the FE estimate (13.181), although neither reaches statistical significance due to large standard errors. This suggests that banks with stronger ESG performance may maintain higher loan loss provisions, aligning with more conservative risk management practices, but this relationship is estimated with considerable uncertainty.
-
-Interestingly, the relationship reverses for RWA ratio, where the IV coefficient (-0.006) is 12194.8% more negative than the FE estimate (-0.000). This implies that ESG performance may reduce the proportion of risk-weighted assets more substantially than fixed effects estimates suggest, potentially indicating that ESG-focused banks maintain less risky asset portfolios—an effect masked in simpler models that do not address endogeneity.
-
-For leverage ratio and liquidity ratio, the IV coefficients are more negative than their FE counterparts (-0.002 vs -0.000 and -0.002 vs -0.001, respectively), suggesting that ESG performance might be associated with slightly lower leverage and liquidity ratios when endogeneity is addressed. However, these differences are relatively modest in magnitude and not statistically significant.
-
-### Pillar-Specific Instrumental Variables Results
-
-Table \@ref(tab:comparison-fe-iv) presents the IV results for individual ESG pillars, focusing specifically on CET1 risk exposure. This more granular analysis reveals differing patterns across environmental, social, and governance dimensions. Under IV estimation, the environmental pillar demonstrates a negative coefficient (-0.004), suggesting that stronger environmental performance might be associated with lower capital ratios. Similarly, the social pillar shows a negative relationship (-0.001), though with a smaller magnitude.
-
-```{r comparison-fe-iv}
-iv_pillar_table
-```
-
-In contrast, the governance pillar exhibits a positive coefficient (0.007), indicating that better governance practices might be linked to higher capital adequacy. This aligns with theoretical expectations that robust governance structures promote prudent risk management and regulatory compliance, potentially leading to stronger capital positions.
-
-None of these pillar-specific coefficients reach statistical significance at conventional levels, which may reflect limited statistical power due to the relatively small sample size and the demands of the IV approach on the data. Nevertheless, the patterns are informative, particularly the divergent directions of effect across pillars, which highlight the importance of disaggregating ESG performance into its component dimensions.
-
-The control variables in the IV specification maintain similar patterns to those observed in fixed effects models, with bank size (log assets) showing a positive but no longer statistically significant relationship with CET1 risk exposure (0.087, p > 0.1). The equity-to-assets ratio remains strongly positively associated with capital adequacy (3.790, p < 0.01), confirming the mechanical relationship between equity holdings and regulatory capital ratios.
-
-### Discussion of IV Results
-
-The substantial differences between FE and IV estimates suggest that endogeneity is indeed a significant concern in estimating the relationship between ESG performance and banking risk measures. The generally larger IV coefficients for capital adequacy measures indicate that conventional approaches may underestimate the risk-mitigating effects of ESG performance.
-
-These findings align with theoretical perspectives in the literature that emphasize the potential risk-reduction benefits of ESG initiatives through improved reputation, stakeholder trust, and regulatory preparedness (Godfrey, 2005; He et al., 2021). However, they also highlight the complexity of these relationships, with varying patterns across different risk measures and ESG pillars.
-
-The divergent results for different ESG pillars underscore the importance of considering the multidimensional nature of sustainability performance. The potentially negative relationship between environmental performance and capital ratios, contrasted with the positive association for governance, suggests that different dimensions of ESG may operate through distinct mechanisms in influencing banking risk profiles. This aligns with findings from Bannier et al. (2021) and Izcan & Bektas (2022), who documented varying effects across ESG components.
-
-## Limitations of the IV Approach
-
-Despite its advantages in addressing endogeneity, the IV approach implemented here has several limitations that warrant consideration. First, the leave-one-out country-year average instrument assumes that country-level ESG norms affect bank-level ESG performance but have no direct effect on bank risk measures. While theoretically plausible, this exclusion restriction cannot be directly tested and may be violated if country-level factors simultaneously influence both ESG norms and banking risk through channels other than bank-specific ESG performance.
-
-Second, the relatively small sample size (132 bank-year observations) limits statistical power, potentially explaining the lack of statistical significance for many IV coefficients despite their large magnitudes. This constraint is particularly relevant for the pillar-specific analysis, which further divides the explanatory power across multiple ESG dimensions.
-
-Third, the IV approach addresses endogeneity stemming from reverse causality and omitted variables that vary over time, but it cannot account for all sources of endogeneity, particularly those arising from measurement error in ESG scores or dynamic relationships that evolve differently across banks.
-
-Finally, while the IV estimates suggest substantial downward bias in the fixed effects results, the large percentage differences between estimation approaches should be interpreted with caution, particularly where the FE coefficients are close to zero, making percentage comparisons potentially misleading.
-
-## Quantile Regression Analysis
-
-Building upon the methodological framework outlined in Section 5.3, this section presents the results from quantile regression analysis, which examines the potentially heterogeneous effects of ESG factors across different levels of banking risk. While the fixed effects models presented earlier provide insights into average relationships between ESG performance and risk metrics, they may mask important variations across the risk distribution. Quantile regression addresses this limitation by estimating the relationship at different points in the conditional distribution of the dependent variable, providing a more nuanced understanding of how ESG factors relate to banking risk profiles.
-
-### Overall ESG Score Effects Across Risk Quantiles
-
-Figure \@ref(fig:quantile-ESG) presents the estimated effects of overall ESG scores on banking risk measures across different quantiles. The results reveal patterns that would be obscured in a conventional mean-based analysis. For CET1 risk exposure, the effect of ESG scores is consistently negative across all quantiles, ranging from -0.004 at the 0.1 quantile to -0.002 at the 0.9 quantile. This suggests that higher ESG performance is associated with lower CET1 risk exposure across the entire distribution, with a slightly stronger effect for banks with already lower capital ratios (lower quantiles).
-
-```{r}
-# Run the quantile regression analysis
-results <- run_simplified_esg_analysis(
-  data = data_analysis,  
-  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
-               "leverage_ratio", "provisions_ratio"),
-  tau_values = c(0.1, 0.25, 0.5, 0.75, 0.9)
-)
-```
+## Quantile regression
 
 ```{r quantile-ESG}
 results$plots$combined$esg
 ```
-
-The statistical significance of these effects varies across the distribution. As shown in Table \@ref(tab:quantile-esg-table), the ESG coefficient is significant at the 5% level for the 0.1 quantile (-0.004, p < 0.05) and at the 0.1% level for the 0.25 and 0.5 quantiles (-0.003, p < 0.001). However, it becomes only marginally significant at the 0.75 quantile (-0.003, p < 0.1) and insignificant at the 0.9 quantile (-0.002, p > 0.1). This pattern suggests that ESG performance has a more reliable relationship with capital adequacy for banks in the lower to middle ranges of the risk distribution.
-
-For Tier 1 risk exposure, a similar pattern emerges, with a negative relationship that is most pronounced at the median quantile. The effect becomes more varied at the extremes of the distribution, particularly at the 0.9 quantile where the confidence interval widens substantially. This indicates greater uncertainty in the ESG-risk relationship for banks with the highest Tier 1 risk exposure ratios.
-
-The relationship between ESG scores and leverage ratio shows minimal variation across quantiles, with coefficients close to zero throughout the distribution. This aligns with the findings from fixed effects models, suggesting that ESG performance has limited direct association with leverage decisions.
-
-For provisions ratio, the coefficients are slightly positive and relatively stable across quantiles, though generally lacking statistical significance. This suggests that while higher ESG scores might be associated with marginally higher provisioning, this relationship is not particularly strong at any point in the risk distribution.
-
-Table \@ref(tab:cet1-quantile-esg) provides a detailed view of quantile regression results for CET1 risk exposure across different quantiles. Beyond the ESG coefficient, it reveals interesting patterns in control variables. The effect of log assets on CET1 risk exposure decreases monotonically across quantiles, from 0.027 (p < 0.05) at the 0.1 quantile to -0.040 (p < 0.05) at the 0.9 quantile. This suggests that bank size has a positive relationship with capital adequacy for riskier banks (lower quantiles) but a negative relationship for safer banks (higher quantiles), a nuanced finding that would be missed in mean-based analyses.
-
-Similarly, the coefficient for equity-to-assets ratio shows substantial variation, from a positive but insignificant 1.096 at the 0.1 quantile to a negative and marginally significant -2.294 (p < 0.1) at the 0.9 quantile. This unexpected pattern at higher quantiles might reflect that banks with already high CET1 ratios exhibit different strategic approaches to overall equity levels, potentially optimizing other aspects of their capital structure.
-
-### ESG Pillar Effects Across Risk Quantiles
-
-Disaggregating ESG into its component pillars reveals even more nuanced relationships that vary across the risk distribution, as shown in Figures \@ref(fig:quantile-environmental), \@ref(fig:qunatile-social), and \@ref(fig:quantile-governance).
 
 ```{r quantile-environmental}
 results$plots$combined$environmental
@@ -536,176 +488,8 @@ results$plots$combined$social
 results$plots$combined$governance
 ```
 
-The environmental pillar demonstrates a relationship with CET1 risk exposure that varies substantially across quantiles. At lower quantiles (0.1 and 0.25), the relationship is weakly negative, becoming more positive at higher quantiles, though generally not reaching statistical significance (Table \@ref(tab:quantile-pillar-table)). This pattern suggests that environmental performance may have different implications for banks depending on their position in the risk distribution, with potentially beneficial effects for lower-risk banks.
-
-
-```{r}
-summary_data <- get_raw_summary_tables(
-  results$coefficients$esg, 
-  results$coefficients$pillars
-)
-```
-
-```{r quantile-esg-table}
-make_simple_esg_summary_table(summary_data)
-```
-
-For provisions ratio, the environmental score shows an interesting pattern where the relationship is initially positive at lower quantiles but becomes increasingly negative at higher quantiles. This could indicate that banks with already higher provisioning levels (upper quantiles) that focus on environmental performance might adopt more conservative provisioning practices, while the opposite occurs for banks with lower provisions.
-
-The social pillar exhibits the most consistent relationship with capital adequacy measures across the risk distribution. For CET1 risk exposure, the coefficient is negative across all quantiles, with values ranging from -0.004 at the 0.25 quantile to -0.008 at the 0.75 quantile (Table \@ref(tab:quantile-pillar-table)). The relationship is statistically significant at the 0.1% level for both the 0.25 and 0.5 quantiles, becoming even stronger at the 0.75 quantile. This pattern suggests that social performance has a particularly strong negative association with capital risk for banks in the middle to upper-middle portions of the risk distribution.
-
-```{r quantile-pillar-table}
-make_simple_pillar_summary_table(summary_data)
-```
-
-This finding aligns with and extends the results from Ashwin Kumar et al. (2016), who documented relationships between social performance and financial stability. While they found a general association, our quantile analysis reveals that this relationship is more pronounced for banks with moderate to higher capital buffers, suggesting a potential complementarity between social responsibility and prudent capital management for these institutions.
-
-The governance pillar demonstrates the most varied relationship across the risk distribution. For CET1 risk exposure, the coefficient is close to zero at most quantiles, but shows a modest positive relationship at the 0.75 quantile (Table \@ref(tab:quantile-pillar-table)). For provisions ratio, the relationship is slightly positive at median quantiles but becomes negative at extreme quantiles. This heterogeneity aligns with findings from Barth et al. (2022), who observed complex relationships between governance factors and risk metrics.
-
-```{r cet1-quantile-esg}
-make_esg_table(results$coefficients$esg, "cet1_risk_exposure")
-```
-
-Table \@ref(tab:leverage-quantile-esg) presents detailed results for the pillar-specific analysis of leverage ratio. Notably, the environmental score shows a statistically significant negative relationship at the 0.25 quantile (-0.001, p < 0.01), but this effect disappears at other points in the distribution. The social and governance pillars show minimal effects across all quantiles. Control variables, particularly equity-to-assets ratio, exhibit strong positive associations with leverage ratio across all quantiles, with coefficients increasing monotonically from 2.193 (p < 0.001) at the 0.1 quantile to 3.010 (p < 0.001) at the 0.9 quantile. This pattern reflects the mechanical relationship between equity holdings and regulatory capital requirements, with the effect becoming stronger for banks with already higher leverage ratios.
-
-```{r leverage-quantile-esg}
-make_pillar_table(results$coefficients$pillars, "leverage_ratio")
-```
-
-### Comparison with Previous Research
-
-Our quantile regression findings both complement and extend previous research on the relationship between ESG performance and banking risk. The negative association between social pillar scores and capital risk measures across multiple quantiles aligns with studies by Amiraslani et al. (2017) and Izcan & Bektas (2022), who found that social factors can enhance bank stability. However, our quantile approach reveals that this relationship is not uniform across the risk distribution, being particularly strong for banks in the middle to upper quantiles.
-
-Similarly, the varied relationships observed for the environmental and governance pillars across different quantiles help explain some of the mixed findings in previous literature. For instance, Bannier et al. (2021) found that environmental aspects were negatively related to credit risk for U.S. firms but not consistently for European firms. Our quantile results suggest that such inconsistencies might partially result from heterogeneous effects across different segments of the risk distribution, which would be averaged out in conventional regression approaches.
-
-The minimal relationship between ESG factors and leverage ratio across most quantiles aligns with findings from Palmieri et al. (2023), who documented limited direct associations between ESG performance and leverage decisions. However, our identification of a significant negative relationship between environmental scores and leverage ratio at the 0.25 quantile represents a novel finding that warrants further investigation.
-
-### Limitations and Robustness Considerations
-
-While quantile regression provides valuable insights into heterogeneous ESG effects across the risk distribution, several limitations should be acknowledged. First, the relatively small sample size (132 bank-year observations) limits statistical power, particularly at extreme quantiles where estimates become more uncertain. This is reflected in the wider confidence intervals at the 0.1 and 0.9 quantiles for many coefficients.
-
-Second, while our models control for bank size and equity-to-assets ratio, they may not capture all relevant factors that influence the relationship between ESG performance and banking risk. Omitted variables that vary across the risk distribution could potentially bias our quantile estimates.
-
-Third, the quantile regression approach employed here does not address potential endogeneity concerns, such as reverse causality or selection effects. Banks with particular risk profiles might strategically adjust their ESG investments, creating bidirectional relationships that our models do not disentangle.
-
-To address some of these concerns, we implemented bootstrap methods for computing standard errors, as recommended by Koenker and Hallock (2001). This approach provides more robust inference in the presence of heteroskedasticity, which is likely present across different portions of the risk distribution.
-
-## Principal Component Analysis
-
-Building on the methodological framework outlined in Section 5.5, this section presents the results from the Principal Component Analysis (PCA) of ESG dimensions and their relationship with banking risk measures. While the previous fixed effects and quantile regression analyses provide valuable insights into the relationships between aggregate ESG scores or individual pillars and risk metrics, PCA offers a complementary approach that addresses potential multicollinearity and captures the underlying structure of ESG performance beyond the conventional three-pillar framework.
-
-### Component Structure and Variance Explanation
-
-Figure \@ref(fig:pca-results) presents the scree plot of principal components, revealing that the first five components collectively explain approximately 83% of the total variance in ESG variables. The first component alone accounts for 46.2% of the variance, followed by the second component with 13.8%, indicating a substantial dimensionality reduction from the original set of ESG variables. This pattern suggests that while ESG performance is multidimensional, a relatively small number of underlying factors capture the majority of variation across European banks.
-
-
-```{r}
-pca_results <- run_pca_esg_analysis(
-  data = data_analysis,  
-  dep_vars = c("cet1_risk_exposure", "tier1_risk_exposure", 
-               "totalcap_risk_exposure", "leverage_ratio", "provisions", 
-               "provisions_ratio", "liquidity_ratio", "rwa_ratio"),
-  variance_threshold = 0.8
-)
-```
+## PCA
 
 ```{r pca-results}
 pca_results$visualizations$scree_plot
 ```
-
-The loading patterns displayed in Figure \@ref(fig:pca-loading-plot) provide insights into the composition of these principal components. The first principal component (PC1) shows negative associations with multiple ESG variables, including the overall ESG score, ESG score squared, social score, social score squared, and governance score squared. This pattern suggests that PC1 represents a general ESG factor that captures the common variance across multiple dimensions of sustainability performance. The negative loadings indicate that higher values on this component correspond to lower overall ESG performance, essentially making PC1 an inverse measure of general ESG quality.
-
-```{r pca-loading-plot}
-pca_results$visualizations$loading_plot
-```
-
-The second principal component (PC2) demonstrates a more nuanced pattern with positive associations with "ESG Combined" and "Product Responsibility," but negative associations with "Environmental Innovation," "Environmental Score Squared," and "Environmental Score." This combination suggests that PC2 primarily contrasts social and product responsibility aspects against environmental considerations, potentially capturing a trade-off between these dimensions within banks' sustainability strategies.
-
-As detailed in Table \@ref(tab:pca-interpretation), the third principal component (PC3, 10.2% of variance) juxtaposes product responsibility and social performance against management quality and governance, potentially representing a distinction between external stakeholder engagement and internal governance structures. PC4 (7.2% of variance) appears to capture ESG controversies and innovations versus product responsibility and emissions management, while PC5 (5.4% of variance) contrasts emissions and product responsibility against human rights and community engagement.
-
-```{r pca-interpretation}
-pca_results$visualizations$pc_interpretation
-```
-
-These component structures align with and extend previous research on the multidimensional nature of ESG performance. The identification of components that distinguish between different aspects of sustainability beyond the conventional environmental, social, and governance pillars supports the findings of Goss and Roberts (2010), who similarly documented complex underlying structures in corporate social responsibility data. The emergence of a component specifically related to controversies (PC4) is particularly noteworthy given recent literature highlighting the importance of ESG controversies in financial stability (Amiraslani et al., 2017; Galletta et al., 2022).
-
-### Relationship Between Principal Components and Banking Risk
-
-Table \@ref(tab:pca-table) presents the fixed effects estimates for the relationship between the extracted principal components and various banking risk measures. Unlike the models based on aggregate ESG scores or individual pillars, the PCA approach allows for examining how distinct underlying dimensions of ESG performance relate to risk metrics while avoiding multicollinearity issues.
-
-```{r pca-table}
-pca_results$visualizations$pc_model_table
-```
-
-The results reveal several notable patterns. PC1, representing the inverse of general ESG quality, shows a positive but statistically insignificant relationship with CET1 risk exposure (0.001), and negative but insignificant relationships with Tier 1 and total capital risk exposures (-0.002 and -0.003, respectively). This pattern suggests that general ESG quality (inverse of PC1) might be weakly associated with lower CET1 risk exposure but higher Tier 1 and total capital ratios, though these relationships do not reach conventional significance levels.
-
-PC2, contrasting social/product responsibility against environmental considerations, demonstrates a consistent negative relationship with capital adequacy measures, though again without statistical significance. This might suggest that banks emphasizing social and product responsibility over environmental aspects tend to maintain somewhat lower capital ratios, potentially reflecting different risk management priorities across these sustainability dimensions.
-
-PC3, juxtaposing stakeholder engagement against governance, exhibits the strongest relationships with capital adequacy measures, with coefficients of -0.010 for CET1 risk exposure, -0.007 for Tier 1 risk exposure, and -0.009 for total capital risk exposure. While these relationships do not reach statistical significance at conventional levels, their consistent direction and relatively larger magnitudes suggest that banks with stronger external stakeholder engagement relative to governance might maintain lower capital ratios. This aligns with findings by Di Tommaso and Thornton (2020), who documented relationships between governance structures and bank stability measures.
-
-For provisions ratio, PC2 shows a marginally significant positive relationship (0.010, p < 0.1), indicating that banks emphasizing social and product responsibility over environmental considerations tend to maintain higher provisions. This pattern is consistent with a risk management approach that prioritizes protection against potential loan losses, potentially offsetting relatively lower capital ratios.
-
-PC4 and PC5 show varied relationships across risk measures, though generally without statistical significance. The lack of consistent patterns for these components might reflect their more specialized nature, capturing aspects of ESG performance that are less directly relevant for the broad risk metrics examined here.
-
-Across all models, the control variables maintain patterns similar to those observed in previous analyses. Bank size (log assets) positively correlates with capital adequacy measures, with significant coefficients ranging from 0.199 to 0.261 (p < 0.001). Similarly, the equity-to-assets ratio demonstrates strong positive associations with capital adequacy measures, leverage ratio, and provisions ratio, with coefficients ranging from 1.771 to 4.611 (p < 0.001). These robust relationships underscore the importance of controlling for fundamental bank characteristics when examining the influence of ESG factors on risk metrics.
-
-### Model Performance Comparison
-
-Table \@ref(tab:pca-comparison-table) provides a direct comparison of model performance between the original ESG-based models and the PCA-based models across different risk measures. This comparison offers insights into whether the dimensionality reduction and multicollinearity mitigation provided by PCA enhance the explanatory power of our models.
-
-```{r pca-comparison-table}
-pca_results$visualizations$comparison_table
-```
-
-The results indicate that the PCA-based models generally outperform the original models in terms of R-squared values. For CET1 risk exposure, the R-squared increases from 0.444 to 0.447, representing a modest improvement of 0.003. Similar small improvements are observed for Tier 1 risk exposure (0.425 to 0.427) and total capital risk exposure (0.445 to 0.447). More substantial gains emerge for leverage ratio (0.364 to 0.391, an improvement of 0.027), provisions (0.179 to 0.196, an improvement of 0.017), provisions ratio (0.187 to 0.211, an improvement of 0.024), and RWA ratio (0.193 to 0.219, an improvement of 0.026).
-
-The only measure for which the PCA approach does not improve model fit is liquidity ratio, where the R-squared slightly decreases from 0.143 to 0.140. This exception might reflect the unique determinants of bank liquidity, which may be less closely connected to the underlying dimensions of ESG performance captured by our principal components.
-
-The general pattern of improved model performance suggests that the PCA approach effectively captures important aspects of ESG performance that are relevant for banking risk, while reducing noise and redundancy in the original ESG variables. This aligns with methodological insights from Goss and Roberts (2010), who similarly found that dimensionality reduction techniques enhanced the explanatory power of models examining the relationship between social responsibility and financial outcomes.
-
-### Interpretation and Implications
-
-The PCA results offer several important insights beyond those provided by the aggregate ESG and pillar-level analyses. First, they confirm that ESG performance is multidimensional, with several distinct underlying factors that exhibit different relationships with banking risk measures. This complexity underscores the limitations of relying solely on aggregate ESG scores or even the three conventional pillars when examining the implications of sustainability for financial institutions.
-
-Second, the emergence of components that cut across traditional ESG categories—such as PC2 contrasting social responsibility against environmental considerations, or PC3 juxtaposing stakeholder engagement against governance—suggests potential trade-offs or strategic choices within banks' sustainability approaches. These strategic orientations may have different implications for risk management and capital allocation decisions, extending beyond simple positive or negative relationships with overall ESG quality.
-
-Third, the improved model performance achieved through PCA suggests that this approach captures meaningful variation in sustainability performance that is relevant for banking risk. The gains in explanatory power, while modest for some risk measures, are consistent across multiple outcomes, indicating that the dimensionality reduction enhances our ability to identify associations between ESG factors and risk metrics.
-
-The results also align with recent regulatory perspectives emphasizing the need for a more nuanced understanding of ESG risks in banking supervision. As noted by the European Banking Authority (2020), ESG factors can materialize in different ways across financial institutions, affecting various risk dimensions depending on business models and strategic priorities. The PCA approach, by identifying distinct underlying dimensions of ESG performance beyond conventional categories, offers a potentially valuable tool for supervisors seeking to assess how sustainability considerations might influence banking stability.
-
-### Limitations of the PCA Approach
-
-While the PCA results provide valuable insights, several limitations warrant consideration. First, the interpretation of principal components is inherently subjective, relying on patterns of variable loadings that may have multiple plausible explanations. While our interpretations align with theoretical expectations from the literature, alternative frameworks might suggest different meanings for the identified components.
-
-Second, PCA assumes linear relationships between variables, potentially missing more complex interactions or non-linear patterns in ESG performance. This limitation is particularly relevant given the evidence of non-linear relationships between individual ESG pillars and risk measures identified in our fixed effects models (Section 6.3).
-
-Third, the PCA approach, while addressing multicollinearity, does not resolve potential endogeneity concerns such as reverse causality or omitted variables. Banks' risk profiles might influence their sustainability priorities, creating bidirectional relationships that our models do not fully disentangle.
-
-Finally, the relatively small sample size (132 bank-year observations) limits the stability and precision of our PCA results. With a larger set of ESG variables, more robust component structures might emerge, potentially capturing additional nuances in sustainability performance relevant for banking risk.
-
-Despite these limitations, the PCA approach provides a valuable complement to the aggregate ESG and pillar-level analyses, offering insights into the underlying structure of sustainability performance and its implications for banking risk that would be difficult to obtain through conventional methods alone.
-
-# Conclusion
-
-
-
-# Appendix
-
-## References
-
-## Tables
-
-```{r variables-table, echo=FALSE}
-source("variables_df.R")
-kable(variables_df, 
-      caption = "Overview of variables", 
-      booktabs = TRUE,
-      longtable = TRUE) %>%
-  kable_styling(latex_options = c("striped", "repeat_header", "hold_position"),
-                font_size = 9) %>%
-  column_spec(1, bold = TRUE, width = "2.5in") %>%
-  column_spec(2, width = "2.5in") %>%
-  column_spec(3, width = "1in")
-```
-
-
