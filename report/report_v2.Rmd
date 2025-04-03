@@ -80,6 +80,8 @@ This study investigates the relationship between Environmental, Social, and Gove
 |------------------------------|
 | **Signature**
 | |
+| |
+| |
 
 \newpage 
 
@@ -148,54 +150,86 @@ During the data retrieving process, first all public and private companies were 
 
 The merged dataset was constructed by performing an inner join between the regulatory data (EBA) and ESG data (Refinitiv). This merging approach ensured that only banks and years appearing in both datasets are retained for the final analytical sample. This ensures that each record in the final dataset contains both the regulatory capital and risk information and the ESG performance indicators for a given institution-year observation. Since the bank names differ between the two datasets, the Legal Entity Identifier (LEI) was used to merge the datasets. 
 
-# Descriptive Analyses
+# Descriptive Analysis
 
-This section provides an overview of the data used in the analysis. It presents descriptive statistics for the main variables of interest, examines their correlations, and illustrates their distributions and trends over time.
+This section provides a focused examination of key patterns in the data that inform tge understanding of the ESG-risk relationship in European banking. The sample comprises 132 bank-year observations across 2020-2023.
 
-## Summary Statistics
+```{r esg-distribution, fig.cap="Distribution of ESG Scores and Pillar Components"}
+# Create a more informative visualization showing both the overall distribution and pillar breakdown
+p1 <- ggplot(data_analysis, aes(x=esg_score)) + 
+  geom_histogram(bins=15, fill="#4472C4", alpha=0.7) +
+  geom_vline(aes(xintercept=mean(esg_score, na.rm=TRUE)), 
+             color="red", linetype="dashed", size=1) +
+  labs(x="ESG Score", y="Frequency") +
+  theme_minimal()
 
-Table \@ref(tab:summary-stats) presents descriptive statistics for the primary variables of interest. The sample consists of 132 bank-year observations across the four-year period. The ESG scores exhibit considerable variation, with the overall ESG score averaging 73.32 (on a scale of 0-100, with the higher the better) and a standard deviation of 11.95 (so the majority tend to cluster around the average). Among the three ESG pillars, banks perform strongest in environmental metrics (mean = 85.98), followed by social (75.36) and governance (68.62). This pattern reflects the European banking sector's significant emphasis on environmental priorities in recent years, likely driven by EU policy initiatives such as the European Green Deal and the EU Taxonomy Regulation.
+p2 <- data_analysis %>%
+  select(environmental_pillar_score, social_pillar_score, governance_pillar_score) %>%
+  pivot_longer(cols=everything(), names_to="Pillar", values_to="Score") %>%
+  mutate(Pillar = factor(Pillar, 
+                         levels=c("environmental_pillar_score", 
+                                  "social_pillar_score", 
+                                  "governance_pillar_score"),
+                         labels=c("Environmental", "Social", "Governance"))) %>%
+  ggplot(aes(x=Pillar, y=Score, fill=Pillar)) +
+  geom_boxplot(alpha=0.7) +
+  labs(x="", y="Score") +
+  scale_fill_manual(values=c("#4472C4", "#ED7D31", "#A5A5A5")) +
+  theme_minimal() +
+  theme(legend.position="none")
 
-Regarding the risk-weighted capital measures, the dataset shows that banks hold, on average, a Common Equity Tier 1 (CET1) risk exposure ratio of 0.60, with Tier 1 and total capital risk exposures standing at 0.67 and 0.76, respectively. These ratios capture how much high-quality capital (e.g., common stock and retained earnings, plus additional Tier 1 or total regulatory capital) a bank maintains relative to its risk-weighted assets. By exceeding regulatory minima, most institutions in the sample signal relatively prudent capital management practices, although the minimum values (ranging from 0.29 to 0.35) reveal that certain banks operate with tighter buffers, potentially reflecting more aggressive asset compositions or narrower margins for absorbing losses.
-
-Provisions, which represent funds set aside to cover expected credit losses, display substantial variation (standard deviation = 10,001.15), possibly reflecting differences in bank size, credit risk appetite, and loan portfolio composition. When normalized as a provisions ratio (average = 0.05), these differences remain pronounced (minimum = 0.002, maximum = 0.38), signaling diverse approaches to loan-loss absorption across institutions. The liquidity ratio (mean = 0.15) serves as an indicator of the share of liquid assets available to meet short-term obligations, whereas the risk-weighted assets (RWA) ratio (average = 0.37) measures how much of a bank’s balance sheet is exposed to assets that require regulatory capital based on their riskiness, thus highlighting each bank’s overall risk management strategy.
-
-Bank size, as captured by the natural log of total assets (mean = 13.49), underscores the mix of medium-sized and large European banks in the sample, with values ranging from 10.71 to 16.16. Finally, the equity-to-assets ratio averages 0.07, reflecting the industry’s characteristic high reliance on borrowed funds relative to owner’s equity.
-
-```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics"}
-# Define the variables you want to summarize
-key_vars_summary <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
-                      "governance_pillar_score", "cet1_risk_exposure", "tier1_risk_exposure",
-                      "totalcap_risk_exposure", "leverage_ratio", "provisions",
-                      "provisions_ratio", "liquidity_ratio", "rwa_ratio",
-                      "log_assets", "equity_to_assets") # Select relevant vars
-
-# Generate and print the table
-summary_table <- generate_summary_table(data_analysis,
-                                        vars = key_vars_summary,
-                                        title = "Descriptive Statistics of Key Variables")
-print(summary_table)
+grid.arrange(p1, p2, ncol=2)
 ```
 
-## Correlations
+Figure \@ref(fig:esg-distribution) reveals that ESG scores among European banks cluster around a mean of 73.32 (on a scale of 0-100), with a standard deviation of 11.95. The right panel demonstrates the distinct performance patterns across ESG pillars: banks score highest on environmental metrics (mean = 85.98), followed by social (75.36) and governance (68.62). This environmental prioritization likely reflects the European banking sector's response to recent EU policy initiatives such as the European Green Deal and Taxonomy Regulation.
 
-Table \@ref(tab:correlation-matrix) displays the Pairwise Pearson correlation patterns among key variables, revealing several notable relationships. The overall ESG score exhibits strong positive correlations with the social (0.83) and governance (0.85) pillars, and a moderate correlation with the environmental pillar (0.62). Interestingly, ESG scores show negative correlations with risk metrics: specifically, -0.25 with CET1 risk exposure. This negative relationship, though modest, aligns with the hypothesis that stronger ESG performance may be associated with lower risk levels.
+Regarding risk-weighted capital measures, banks maintain an average CET1 risk exposure ratio of 0.60, with Tier 1 and total capital risk exposures at 0.67 and 0.76 respectively. Table 1 reveals that larger banks (Q4) tend to maintain higher capital ratios than smaller institutions (Q1), suggesting different capital management strategies across the size spectrum. The provisions ratio (mean = 0.05) exhibits substantial variation (min = 0.002, max = 0.38), indicating diverse approaches to expected loss absorption. The risk-weighted assets ratio (average = 0.37) highlights how banks' balance sheets are structured regarding regulatory risk exposure.
 
-The three ESG pillars show different patterns of association with risk metrics. The environmental pillar correlates negatively (-0.11) with CET1 risk exposure, while the social pillar shows a stronger negative relationship (-0.35). Governance displays the weakest correlation with CET1 risk (-0.12). Bank size (log assets) demonstrates positive correlations with ESG score (0.50) and environmental pillar score (0.58), suggesting that larger banks tend to have stronger overall ESG performance, particularly in environmental areas. This pattern might reflect larger institutions' greater resources for sustainability initiatives or their enhanced regulatory scrutiny and reporting requirements. Notably, the leverage ratio shows a negative correlation with log assets (-0.45), indicating that larger banks tend to operate with relatively lower leverage ratios.
+```{r esg-risk-heatmap, fig.cap="Correlation Heatmap: ESG Components vs. Risk Metrics"}
+# Create a focused heatmap showing correlations between ESG components and risk metrics
+esg_vars <- c("esg_score", "environmental_pillar_score", "social_pillar_score", "governance_pillar_score")
+risk_vars <- c("cet1_risk_exposure", "tier1_risk_exposure", "totalcap_risk_exposure", 
+               "leverage_ratio", "provisions_ratio", "rwa_ratio")
 
-```{r correlation-matrix, echo=FALSE, results='asis', fig.cap="Correlation Matrix."}
-# Define variables for the correlation matrix (can be a subset for readability)
-cor_vars <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
-              "governance_pillar_score", "cet1_risk_exposure", "leverage_ratio",
-              "provisions_ratio", "liquidity_ratio", "rwa_ratio",
-              "log_assets", "equity_to_assets")
+cor_matrix <- data_analysis %>%
+  select(all_of(c(esg_vars, risk_vars))) %>%
+  cor(use = "pairwise.complete.obs") %>%
+  as.data.frame() %>%
+  rownames_to_column("variable1") %>%
+  filter(variable1 %in% esg_vars) %>%
+  select(variable1, all_of(risk_vars)) %>%
+  pivot_longer(-variable1, names_to = "variable2", values_to = "correlation")
 
-# Generate and print the correlation table
-correlation_table <- generate_correlation_table(data_analysis,
-                                                vars = cor_vars,
-                                                title = "Correlation Matrix")
-print(correlation_table)
+# Simplify variable names for better visualization
+cor_matrix <- cor_matrix %>%
+  mutate(
+    variable1 = case_when(
+      variable1 == "esg_score" ~ "ESG Score",
+      variable1 == "environmental_pillar_score" ~ "Environmental",
+      variable1 == "social_pillar_score" ~ "Social",
+      variable1 == "governance_pillar_score" ~ "Governance"
+    ),
+    variable2 = case_when(
+      variable2 == "cet1_risk_exposure" ~ "CET1 Ratio",
+      variable2 == "tier1_risk_exposure" ~ "Tier 1 Ratio",
+      variable2 == "totalcap_risk_exposure" ~ "Total Capital Ratio",
+      variable2 == "leverage_ratio" ~ "Leverage Ratio",
+      variable2 == "provisions_ratio" ~ "Provisions Ratio",
+      variable2 == "rwa_ratio" ~ "RWA Ratio"
+    )
+  )
+
+ggplot(cor_matrix, aes(x = variable2, y = variable1, fill = correlation)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", correlation)), size = 3) +
+  scale_fill_gradient2(low = "#D73027", mid = "white", high = "#4575B4", 
+                       midpoint = 0, limits = c(-0.5, 0.5)) +
+  labs(x = "", y = "", fill = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+Figure \@ref(fig:esg-risk-heatmap) reveals distinct correlation patterns between ESG components and banking risk metrics. The overall ESG score shows negative correlations with capital adequacy measures (CET1: -0.25, Tier 1: -0.08), suggesting that stronger ESG performance might be associated with lower risk-weighted capital ratios. This counterintuitive relationship warrants deeper examination in subsequent analyses. Among ESG pillars, the social dimension demonstrates the strongest negative association with capital ratios (CET1: -0.35), while environmental and governance pillars show weaker relationships (CET1: -0.11 and -0.12 respectively). This pattern suggests heterogeneity in how different sustainability dimensions relate to risk profiles, with social performance potentially playing a more significant role in banks' risk positioning.
 
 # Methodology
 
@@ -354,7 +388,7 @@ Table \@ref(tab:leverage-quantile-esg) presents detailed results for the pillar-
 
 ## Principal Component Analysis
 
-Building on the methodological framework outlined in Section 5.5, this section presents the results from the Principal Component Analysis (PCA) of ESG dimensions and their relationship with banking risk measures. The first five components collectively explain approximately 83% of the total variance in ESG variables. The first component alone accounts for 46.2% of the variance, followed by the second component with 13.8%, indicating a substantial dimensionality reduction from the original set of ESG variables. This pattern suggests that while ESG performance is multidimensional, a relatively small number of underlying factors capture the majority of variation across European banks.
+This section presents results from Principal Component Analysis (PCA) of ESG dimensions and their relationship with banking risk. The first five components explain approximately 83% of total variance in ESG variables, with the first component alone accounting for 46.2% followed by the second with 13.8%. This substantial dimensionality reduction suggests that while ESG performance is multidimensional, relatively few underlying factors capture most variation across European banks.
 
 ```{r}
 pca_results <- run_pca_esg_analysis(
@@ -366,41 +400,37 @@ pca_results <- run_pca_esg_analysis(
 )
 ```
 
-The loading patterns displayed in Figure \@ref(fig:pca-loading-plot) provide insights into the composition of these principal components. The first principal component (PC1) shows negative associations with multiple ESG variables, including the overall ESG score, ESG score squared, social score, social score squared, and governance score squared. This pattern suggests that PC1 represents a general ESG factor that captures the common variance across multiple dimensions of sustainability performance. The negative loadings indicate that higher values on this component correspond to lower overall ESG performance, essentially making PC1 an inverse measure of general ESG quality.
+Figure \@ref(fig:pca-loading-plot) reveals the composition of these principal components. PC1 shows negative associations with multiple ESG variables (overall ESG score, ESG score squared, social score, social score squared, and governance score squared), representing a general ESG factor capturing common variance across sustainability dimensions. Essentially, PC1 functions as an inverse measure of general ESG quality.
 
 ```{r pca-loading-plot}
 pca_results$visualizations$loading_plot
 ```
 
-The second principal component (PC2) demonstrates a more nuanced pattern with positive associations with "ESG Combined" and "Product Responsibility," but negative associations with "Environmental Innovation," "Environmental Score Squared," and "Environmental Score." This combination suggests that PC2 primarily contrasts social and product responsibility aspects against environmental considerations, potentially capturing a trade-off between these dimensions within banks' sustainability strategies.
+PC2 demonstrates a more nuanced pattern, positively associating with "ESG Combined" and "Product Responsibility" while negatively associating with environmental measures. This suggests PC2 contrasts social and product responsibility against environmental considerations, potentially capturing trade-offs between these dimensions in banks' sustainability strategies.
 
-As detailed in Table \@ref(tab:pca-interpretation), the third principal component (PC3, 10.2% of variance) juxtaposes product responsibility and social performance against management quality and governance, potentially representing a distinction between external stakeholder engagement and internal governance structures. PC4 (7.2% of variance) appears to capture ESG controversies and innovations versus product responsibility and emissions management, while PC5 (5.4% of variance) contrasts emissions and product responsibility against human rights and community engagement.
+As shown in Table \@ref(tab:pca-interpretation), PC3 (10.2% of variance) juxtaposes product responsibility and social performance against management quality and governance, while PC4 (7.2%) captures ESG controversies and innovations versus product responsibility. PC5 (5.4%) contrasts emissions and product responsibility against human rights and community engagement.
 
 ```{r pca-interpretation}
 pca_results$visualizations$pc_interpretation
 ```
 
-These component structures align with and extend previous research on the multidimensional nature of ESG performance. The identification of components that distinguish between different aspects of sustainability beyond the conventional environmental, social, and governance pillars supports the findings of Goss and Roberts (2010), who similarly documented complex underlying structures in corporate social responsibility data. The emergence of a component specifically related to controversies (PC4) is particularly noteworthy given recent literature highlighting the importance of ESG controversies in financial stability (Amiraslani et al., 2017; Galletta et al., 2022).
+These component structures extend previous research on ESG performance's multidimensional nature. The component specifically related to controversies (PC4) is particularly noteworthy given recent literature highlighting ESG controversies' importance in financial stability (Amiraslani et al., 2017; Galletta et al., 2022).
 
-Table \@ref(tab:pca-table) presents the fixed effects estimates for the relationship between the extracted principal components and various banking risk measures. Unlike the models based on aggregate ESG scores or individual pillars, the PCA approach allows for examining how distinct underlying dimensions of ESG performance relate to risk metrics while avoiding multicollinearity issues.
+Table \@ref(tab:pca-table) presents fixed effects estimates for relationships between extracted principal components and banking risk measures.
 
 ```{r pca-table}
 pca_results$visualizations$pc_model_table
 ```
 
-The results reveal several notable patterns. PC1, representing the inverse of general ESG quality, shows a positive but statistically insignificant relationship with CET1 risk exposure (0.001), and negative but insignificant relationships with Tier 1 and total capital risk exposures (-0.002 and -0.003, respectively). This pattern suggests that general ESG quality (inverse of PC1) might be weakly associated with lower CET1 risk exposure but higher Tier 1 and total capital ratios, though these relationships do not reach conventional significance levels.
+PC1 (inverse ESG quality) shows weak relationships with capital measures, though none reach statistical significance. PC2 (social/product responsibility vs. environmental focus) demonstrates consistently negative relationships with capital adequacy measures, suggesting banks emphasizing social aspects over environmental ones may maintain somewhat lower capital ratios.
 
-PC2, contrasting social/product responsibility against environmental considerations, demonstrates a consistent negative relationship with capital adequacy measures, though again without statistical significance. This might suggest that banks emphasizing social and product responsibility over environmental aspects tend to maintain somewhat lower capital ratios, potentially reflecting different risk management priorities across these sustainability dimensions.
+PC3 (stakeholder engagement vs. governance) exhibits the strongest relationships with capital adequacy measures (-0.010 for CET1, -0.007 for Tier 1, -0.009 for total capital risk exposure). While not statistically significant, these consistent relationships suggest banks with stronger external stakeholder engagement relative to governance might maintain lower capital ratios, aligning with Di Tommaso and Thornton's (2020) findings.
 
-PC3, juxtaposing stakeholder engagement against governance, exhibits the strongest relationships with capital adequacy measures, with coefficients of -0.010 for CET1 risk exposure, -0.007 for Tier 1 risk exposure, and -0.009 for total capital risk exposure. While these relationships do not reach statistical significance at conventional levels, their consistent direction and relatively larger magnitudes suggest that banks with stronger external stakeholder engagement relative to governance might maintain lower capital ratios. This aligns with findings by Di Tommaso and Thornton (2020), who documented relationships between governance structures and bank stability measures.
+For provisions ratio, PC2 shows a marginally significant positive relationship (0.010, p < 0.1), indicating banks emphasizing social responsibility maintain higher provisions, potentially offsetting lower capital ratios. PC4 and PC5 show varied relationships without statistical significance, possibly reflecting their specialized nature.
 
-For provisions ratio, PC2 shows a marginally significant positive relationship (0.010, p < 0.1), indicating that banks emphasizing social and product responsibility over environmental considerations tend to maintain higher provisions. This pattern is consistent with a risk management approach that prioritizes protection against potential loan losses, potentially offsetting relatively lower capital ratios.
+Control variables maintain patterns similar to previous analyses, with bank size positively correlating with capital adequacy measures (coefficients 0.199-0.261, p < 0.001) and equity-to-assets ratio showing strong positive associations across risk measures (coefficients 1.771-4.611, p < 0.001).
 
-PC4 and PC5 show varied relationships across risk measures, though generally without statistical significance. The lack of consistent patterns for these components might reflect their more specialized nature, capturing aspects of ESG performance that are less directly relevant for the broad risk metrics examined here.
-
-Across all models, the control variables maintain patterns similar to those observed in previous analyses. Bank size (log assets) positively correlates with capital adequacy measures, with significant coefficients ranging from 0.199 to 0.261 (p < 0.001). Similarly, the equity-to-assets ratio demonstrates strong positive associations with capital adequacy measures, leverage ratio, and provisions ratio, with coefficients ranging from 1.771 to 4.611 (p < 0.001). These robust relationships underscore the importance of controlling for fundamental bank characteristics when examining the influence of ESG factors on risk metrics.
-
-The PCA results offer several important insights beyond those provided by the aggregate ESG and pillar-level analyses. First, they confirm that ESG performance is multidimensional, with several distinct underlying factors that exhibit different relationships with banking risk measures. This complexity underscores the limitations of relying solely on aggregate ESG scores or even the three conventional pillars when examining the implications of sustainability for financial institutions. Second, the emergence of components that cut across traditional ESG categories—such as PC2 contrasting social responsibility against environmental considerations, or PC3 juxtaposing stakeholder engagement against governance—suggests potential trade-offs or strategic choices within banks' sustainability approaches. These strategic orientations may have different implications for risk management and capital allocation decisions, extending beyond simple positive or negative relationships with overall ESG quality.
+These PCA results offer key insights beyond aggregate ESG analyses. First, they confirm ESG performance's multidimensionality, with distinct underlying factors exhibiting different relationships with risk measures. Second, components cutting across traditional ESG categories—such as PC2 contrasting social responsibility against environmental considerations—suggest potential trade-offs in banks' sustainability approaches with different implications for risk management and capital allocation.
 
 # Conclusion
 
@@ -449,6 +479,63 @@ distribution_plot <- generate_distribution_plots(data_analysis, dist_vars)
 print(distribution_plot)
 ```
 
+
+```{r risk-size-table, echo=FALSE, results='asis', fig.cap="Risk Metrics by Bank Size Quartile"}
+# Create a new table grouping banks by size quartiles and showing risk metrics
+data_analysis %>%
+  mutate(size_quartile = ntile(log_assets, 4)) %>%
+  group_by(size_quartile) %>%
+  summarize(
+    `Number of Banks` = n(),
+    `Avg Total Assets (€ Billion)` = mean(exp(log_assets))/1000,
+    `CET1 Risk Exposure` = mean(cet1_risk_exposure, na.rm=TRUE),
+    `Tier 1 Risk Exposure` = mean(tier1_risk_exposure, na.rm=TRUE),
+    `Leverage Ratio` = mean(leverage_ratio, na.rm=TRUE),
+    `Provisions Ratio` = mean(provisions_ratio, na.rm=TRUE),
+    `RWA Ratio` = mean(rwa_ratio, na.rm=TRUE)
+  ) %>%
+  kable(caption = "Risk Metrics by Bank Size Quartile",
+        digits = 3,
+        col.names = c("Size Quartile", "N", "Avg Assets (€B)", 
+                      "CET1 Ratio", "Tier 1 Ratio", "Leverage Ratio",
+                      "Provisions Ratio", "RWA Ratio"),
+        booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+```{r summary-stats, echo=FALSE, results='asis', fig.cap="Descriptive Statistics"}
+# Define the variables you want to summarize
+key_vars_summary <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
+                      "governance_pillar_score", "cet1_risk_exposure", "tier1_risk_exposure",
+                      "totalcap_risk_exposure", "leverage_ratio", "provisions",
+                      "provisions_ratio", "liquidity_ratio", "rwa_ratio",
+                      "log_assets", "equity_to_assets") # Select relevant vars
+
+# Generate and print the table
+summary_table <- generate_summary_table(data_analysis,
+                                        vars = key_vars_summary,
+                                        title = "Descriptive Statistics of Key Variables")
+print(summary_table)
+```
+
+
+Table \@ref(tab:correlation-matrix) displays the Pairwise Pearson correlation patterns among key variables, revealing several notable relationships. The overall ESG score exhibits strong positive correlations with the social (0.83) and governance (0.85) pillars, and a moderate correlation with the environmental pillar (0.62). Interestingly, ESG scores show negative correlations with risk metrics: specifically, -0.25 with CET1 risk exposure. This negative relationship, though modest, aligns with the hypothesis that stronger ESG performance may be associated with lower risk levels.
+
+The three ESG pillars show different patterns of association with risk metrics. The environmental pillar correlates negatively (-0.11) with CET1 risk exposure, while the social pillar shows a stronger negative relationship (-0.35). Governance displays the weakest correlation with CET1 risk (-0.12). Bank size (log assets) demonstrates positive correlations with ESG score (0.50) and environmental pillar score (0.58), suggesting that larger banks tend to have stronger overall ESG performance, particularly in environmental areas. This pattern might reflect larger institutions' greater resources for sustainability initiatives or their enhanced regulatory scrutiny and reporting requirements. Notably, the leverage ratio shows a negative correlation with log assets (-0.45), indicating that larger banks tend to operate with relatively lower leverage ratios.
+
+```{r correlation-matrix, echo=FALSE, results='asis', fig.cap="Correlation Matrix."}
+# Define variables for the correlation matrix (can be a subset for readability)
+cor_vars <- c("esg_score", "environmental_pillar_score", "social_pillar_score",
+              "governance_pillar_score", "cet1_risk_exposure", "leverage_ratio",
+              "provisions_ratio", "liquidity_ratio", "rwa_ratio",
+              "log_assets", "equity_to_assets")
+
+# Generate and print the correlation table
+correlation_table <- generate_correlation_table(data_analysis,
+                                                vars = cor_vars,
+                                                title = "Correlation Matrix")
+print(correlation_table)
+```
 
 ## Time Trends
 
